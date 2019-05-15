@@ -1,0 +1,12 @@
+name: style_transfer
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - numpy=1.16.3
+  - scipy=1.2.1
+  - python=3.7.3
+  - pytorch=1.1.0
+  - torchvision=0.2.2
+prefix: /anaconda3/envs/style_transfer
+
