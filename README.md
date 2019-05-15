@@ -22,3 +22,17 @@ $ conda activate style_transfer
 ## Neural style transfer
 $ python -m project.src.style_transfer.neural_style_transfer.train --content PATH_TO_CONTENT_IMAGE --style PATH_TO_STYLE_IMAGE --output PATH_TO_OUTPUT_IMAGE --imsize IMAGE_SIZE --epochs EPOCHS --log-epochs LOG_EPOCHS
 ```
+
+## Sample Output
+
+##### Neural Style Transfer
+
+###### Normal Image
+
+<p align="center">
+    <img src="img/neural_style_transfer/style.jpg?raw=true" width="128px" height="128px"/>
+    <span> + </span>
+    <img src="img/neural_style_transfer/content.jpg?raw=true" width="128px" height="128px"/>
+    <span> = </span>
+    <img src="img/neural_style_transfer/pastiche.png?raw=true" width="128px" height="128px"/>
+</p>
