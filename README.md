@@ -1,4 +1,4 @@
-# Cross-lingual Font Style Transfer
+# Cross-Lingual Font Style Transfer
 
 Cross-lingual font style transfer from English fonts to Chinese characters.
 
@@ -36,3 +36,7 @@ $ python -m project.src.style_transfer.neural_style_transfer.train --content PAT
     <span> = </span>
     <img src="img/neural_style_transfer/pastiche.png?raw=true" width="128px" height="128px"/>
 </p>
+
+## References
+
+- [Neural Artistic Style Transfer: A Comprehensive Look](https://medium.com/artists-and-machine-intelligence/neural-artistic-style-transfer-a-comprehensive-look-f54d8649c199)
