@@ -21,6 +21,10 @@ $ conda activate style_transfer
 # Run
 ## Neural style transfer
 $ python -m project.src.style_transfer.neural_style_transfer.train --content PATH_TO_CONTENT_IMAGE --style PATH_TO_STYLE_IMAGE --output PATH_TO_OUTPUT_IMAGE --imsize IMAGE_SIZE --epochs EPOCHS --log-epochs LOG_EPOCHS
+
+## Image Transformation Network 
+$ python -m project.src.style_transfer.itn.train --dataset PATH_TO_TRAIN_SET_DIR --style PATH_TO_STYLE_IMAGE --output-model PATH_TO_OUTPUT_MODEL --imsize IMAGE_SIZE --epochs EPOCHS --batch-size BATCH_SIZE --log-epochs LOG_EPOCHS --save-epochs SAVE_EPOCHS
+$ python -m project.src.style_transfer.itn.eval --dataset PATH_TO_EVAL_SET_DIR --model PATH_TO_MODEL --imsize IMAGE_SIZE --output-dir OUTPUT_DIRECTORY
 ```
 
 ## Sample Output

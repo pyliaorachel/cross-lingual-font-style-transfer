@@ -6,11 +6,11 @@ import torchvision.models as models
 
 class GramMatrix(nn.Module):
     def forward(self, x):
-        a, b, c, d = x.size()
-        features = x.view(a * b, c * d)
-        G = torch.mm(features, features.t())
+        N, C, H, W = x.size()
+        features = x.view(N, C, H * W)
+        G = torch.bmm(features, features.transpose(1, 2))
 
-        return G.div(a * b * c * d)
+        return G.div(C * H * W)
 
 class StyleCNN(object):
     def __init__(self, style, content, pastiche):
@@ -31,10 +31,9 @@ class StyleCNN(object):
         self.loss = nn.MSELoss()
         self.optimizer = optim.LBFGS([self.pastiche])
 
-        self.use_cuda = torch.cuda.is_available()
-        if self.use_cuda:
-            self.loss_network.cuda()
-            self.gram.cuda()
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.gram.to(self.device)
+        self.loss_network.to(self.device)
 
     def train(self):
         content_losses = []
@@ -54,8 +53,7 @@ class StyleCNN(object):
             not_inplace = lambda layer: nn.ReLU(inplace=False) if isinstance(layer, nn.ReLU) else layer
             for layer in list(self.loss_network.features):
                 layer = not_inplace(layer)
-                if self.use_cuda:
-                    layer.cuda()
+                layer.to(self.device)
 
                 pastiche, content, style = layer.forward(pastiche), layer.forward(content), layer.forward(style)
 

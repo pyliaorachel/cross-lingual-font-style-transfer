@@ -41,10 +41,10 @@ def train(style_image, content_image, imsize, epochs, output_path, log_epochs=10
     style_cnn = StyleCNN(style, content, pastiche)
 
     for i in range(epochs):
-        pastiche, avg_content_loss, avg_style_loss = style_cnn.train()
+        pastiche, content_loss, style_loss = style_cnn.train()
 
         if i % log_epochs == 0:
-            print('Epoch: {}, content loss: {}, style loss: {}'.format(i, avg_content_loss, avg_style_loss))
+            print('Epoch: {}, content loss: {}, style loss: {}'.format(i, content_loss, style_loss))
 
     pastiche.data.clamp_(0, 1)
     save_image(pastiche, output_path, imsize)
