@@ -23,7 +23,7 @@ class StyleCNN(object):
         self.content_layers = ['conv_4']
         self.style_layers = ['conv_1', 'conv_2', 'conv_3', 'conv_4', 'conv_5']
         self.content_weight = 1
-        self.style_weight = 1000
+        self.style_weight = 1000000
 
         self.loss_network = models.vgg19(pretrained=True)
 
@@ -61,11 +61,17 @@ class StyleCNN(object):
                     name = 'conv_' + str(i)
 
                     if name in self.content_layers:
-                        content_loss += self.loss(pastiche * self.content_weight, content.detach() * self.content_weight)
+                        # as suggested in medium post:
+                        #content_loss += self.loss(pastiche * self.content_weight, content.detach() * self.content_weight)
+                        # as in paper:
+                        content_loss += self.content_weight * self.loss(pastiche, content.detach())
 
                     if name in self.style_layers:
                         pastiche_g, style_g = self.gram.forward(pastiche), self.gram.forward(style)
-                        style_loss += self.loss(pastiche_g * self.style_weight, style_g.detach() * self.style_weight)
+                        # as suggested in medium post:
+                        #style_loss += self.loss(pastiche_g * self.style_weight, style_g.detach() * self.style_weight)
+                        # as in paper
+                        style_loss += self.style_weight * self.loss(pastiche_g, style_g.detach())
 
                 if isinstance(layer, nn.ReLU):
                     i += 1
