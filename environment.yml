@@ -8,5 +8,7 @@ dependencies:
   - python=3.7.3
   - pytorch=1.1.0
   - torchvision=0.2.2
+  - pip:
+    - visdom==0.1.8.8
 prefix: /anaconda3/envs/style_transfer
 
