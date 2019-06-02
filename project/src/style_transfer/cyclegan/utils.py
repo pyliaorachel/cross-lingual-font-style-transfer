@@ -98,23 +98,20 @@ class Logger():
 
         if self.log_per_iter:
             # End of iteration
-            for loss_name, loss in self.losses.items():
+            for loss_name, loss in losses.items():
+                loss = loss.item()
                 if loss_name not in self.loss_windows:
                     self.loss_windows[loss_name] = self.viz.line(X=np.array([self.iter]), Y=np.array([loss]),
                                                                  opts={'xlabel': 'iterations', 'ylabel': loss_name, 'title': loss_name})
                 else:
                     self.viz.line(X=np.array([self.iter]), Y=np.array([loss]), win=self.loss_windows[loss_name], update='append')
-                # Reset losses for next epoch
-                self.losses[loss_name] = 0.0
 
-            for acc_name, acc in self.accs.items():
+            for acc_name, acc in accs.items():
                 if acc_name not in self.acc_windows:
                     self.acc_windows[acc_name] = self.viz.line(X=np.array([self.iter]), Y=np.array([acc]),
                                                                  opts={'xlabel': 'iterations', 'ylabel': acc_name, 'title': acc_name})
                 else:
                     self.viz.line(X=np.array([self.iter]), Y=np.array([acc]), win=self.acc_windows[acc_name], update='append')
-                # Reset accs for next epoch
-                self.accs[acc_name] = 0.0
 
             self.iter += 1
             sys.stdout.write('\n')
