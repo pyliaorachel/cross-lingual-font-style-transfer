@@ -40,10 +40,24 @@ def parse_args():
                         help='Epoch to start linearly decaying the learning rate to 0. Default: 100')
     parser.add_argument('--cuda', action='store_true',
                         help='Use GPU computation.')
+    parser.add_argument('--save-model-epoch', type=int, default=10,
+                        help='Epoch to save model. Default: 10')
 
     return parser.parse_args()
 
-def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, lr, decay_epoch, cuda):
+def save_models(netG_X2Y, netG_Y2X, netD_X, netD_Y, output_path, epoch=None):
+    if not epoch:
+        torch.save(netG_X2Y.state_dict(), os.path.join(output_path, 'netG_X2Y.pth'))
+        torch.save(netG_Y2X.state_dict(), os.path.join(output_path, 'netG_Y2X.pth'))
+        torch.save(netD_X.state_dict(), os.path.join(output_path, 'netD_X.pth'))
+        torch.save(netD_Y.state_dict(), os.path.join(output_path, 'netD_Y.pth'))
+    else:
+        torch.save(netG_X2Y.state_dict(), os.path.join(output_path, 'netG_X2Y_{}.pth'.format(epoch)))
+        torch.save(netG_Y2X.state_dict(), os.path.join(output_path, 'netG_Y2X_{}.pth'.format(epoch)))
+        torch.save(netD_X.state_dict(), os.path.join(output_path, 'netD_X_{}.pth'.format(epoch)))
+        torch.save(netD_Y.state_dict(), os.path.join(output_path, 'netD_Y_{}.pth'.format(epoch)))
+
+def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, lr, decay_epoch, cuda, save_model_epoch):
 
     if torch.cuda.is_available() and not cuda:
         print('WARNING: You have a CUDA device, so you should probably run with --cuda.')
@@ -58,6 +72,11 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     netG_Y2X = Generator(device=device)
     netD_X = Discriminator(device=device)
     netD_Y = Discriminator(device=device)
+
+    netG_X2Y.to_device()
+    netG_Y2X.to_device()
+    netD_X.to_device()
+    netD_Y.to_device()
 
     # Lossess
     criterion_GAN = torch.nn.MSELoss()
@@ -85,7 +104,7 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
     # Loss plot
-    logger = Logger(epochs, len(train_loader))
+    logger = Logger(epochs, len(train_loader), log_per_iter=True)
 
     ###### Training ######
     output_path = 'project/output/{}'.format(exp_name)
@@ -165,13 +184,13 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
         lr_scheduler_D_Y.step()
 
         # Save models checkpoints
-        torch.save(netG_X2Y.state_dict(), os.path.join(output_path, 'netG_X2Y.pth'))
-        torch.save(netG_Y2X.state_dict(), os.path.join(output_path, 'netG_Y2X.pth'))
-        torch.save(netD_X.state_dict(), os.path.join(output_path, 'netD_X.pth'))
-        torch.save(netD_Y.state_dict(), os.path.join(output_path, 'netD_Y.pth'))
+        save_models(netG_X2Y, netG_Y2X, netD_X, netD_Y, output_path)
+
+        if (epoch + 1) % save_model_epoch == 0:
+            save_models(netG_X2Y, netG_Y2X, netD_X, netD_Y, output_path, epoch)
 
 if __name__ == '__main__':
     args = parse_args()
 
     train(args.content_dataset, args.style_dataset, args.imsize, args.exp_name,
-          args.epochs, args.batch_size, args.lr, args.decay_epoch, args.cuda)
+          args.epochs, args.batch_size, args.lr, args.decay_epoch, args.cuda, args.save_model_epoch)

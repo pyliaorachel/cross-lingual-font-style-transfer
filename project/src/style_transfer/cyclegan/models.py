@@ -66,7 +66,14 @@ class Generator(nn.Module):
 
         self.model = nn.Sequential(*model)
         self.apply(weights_init_normal)
-        self.to(device)
+
+        self.device = device
+
+    def to_device(self):
+        self.to(self.device)
+
+    def release_device(self):
+        self.cpu()
 
     def forward(self, x):
         return self.model(x)
@@ -96,7 +103,14 @@ class Discriminator(nn.Module):
 
         self.model = nn.Sequential(*model)
         self.apply(weights_init_normal)
-        self.to(device)
+
+        self.device = device
+
+    def to_device(self):
+        self.to(self.device)
+
+    def release_device(self):
+        self.cpu()
 
     def forward(self, x):
         x =  self.model(x)

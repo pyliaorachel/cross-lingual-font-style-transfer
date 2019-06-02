@@ -14,17 +14,20 @@ def tensor2image(tensor):
     return image.astype(np.uint8)
 
 class Logger():
-    def __init__(self, n_epochs, batches_epoch):
+    def __init__(self, n_epochs, batches_epoch, log_per_iter=False):
         self.viz = Visdom()
         self.n_epochs = n_epochs
         self.batches_epoch = batches_epoch
         self.epoch = 1
+        self.iter = 1
         self.batch = 1
         self.prev_time = time.time()
         self.mean_period = 0
         self.losses = {}
+        self.loss_windows_batch = {}
         self.loss_windows = {}
         self.image_windows = {}
+        self.log_per_iter = log_per_iter
 
     def log(self, losses=None, images=None):
         self.mean_period += (time.time() - self.prev_time)
@@ -58,11 +61,11 @@ class Logger():
         if (self.batch % self.batches_epoch) == 0:
             # Plot losses
             for loss_name, loss in self.losses.items():
-                if loss_name not in self.loss_windows:
-                    self.loss_windows[loss_name] = self.viz.line(X=np.array([self.epoch]), Y=np.array([loss/self.batch]), 
-                                                                    opts={'xlabel': 'epochs', 'ylabel': loss_name, 'title': loss_name})
+                if loss_name not in self.loss_windows_batch:
+                    self.loss_windows_batch[loss_name] = self.viz.line(X=np.array([self.epoch]), Y=np.array([loss/self.batch]),
+                                                                       opts={'xlabel': 'epochs', 'ylabel': loss_name, 'title': loss_name})
                 else:
-                    self.viz.line(X=np.array([self.epoch]), Y=np.array([loss/self.batch]), win=self.loss_windows[loss_name], update='append')
+                    self.viz.line(X=np.array([self.epoch]), Y=np.array([loss/self.batch]), win=self.loss_windows_batch[loss_name], update='append')
                 # Reset losses for next epoch
                 self.losses[loss_name] = 0.0
 
@@ -71,6 +74,20 @@ class Logger():
             sys.stdout.write('\n')
         else:
             self.batch += 1
+
+        if self.log_per_iter:
+            # End of iteration
+            for loss_name, loss in self.losses.items():
+                if loss_name not in self.loss_windows:
+                    self.loss_windows[loss_name] = self.viz.line(X=np.array([self.iter]), Y=np.array([loss]),
+                                                                 opts={'xlabel': 'iterations', 'ylabel': loss_name, 'title': loss_name})
+                else:
+                    self.viz.line(X=np.array([self.iter]), Y=np.array([loss]), win=self.loss_windows[loss_name], update='append')
+                # Reset losses for next epoch
+                self.losses[loss_name] = 0.0
+
+            self.iter += 1
+            sys.stdout.write('\n')
 
 class ReplayBuffer():
     def __init__(self, max_size=50):
