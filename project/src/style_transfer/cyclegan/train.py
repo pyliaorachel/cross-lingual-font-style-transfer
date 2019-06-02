@@ -38,6 +38,8 @@ def parse_args():
                         help='Initial learning rate. Default: 0.0002')
     parser.add_argument('--decay-epoch', type=int, default=100,
                         help='Epoch to start linearly decaying the learning rate to 0. Default: 100')
+    parser.add_argument('--d-steps', type=int, default=5,
+                        help='Number of steps for training D. Default: 5.')
     parser.add_argument('--cuda', action='store_true',
                         help='Use GPU computation.')
     parser.add_argument('--save-model-epoch', type=int, default=10,
@@ -57,7 +59,7 @@ def save_models(netG_X2Y, netG_Y2X, netD_X, netD_Y, output_path, epoch=None):
         torch.save(netD_X.state_dict(), os.path.join(output_path, 'netD_X_{}.pth'.format(epoch)))
         torch.save(netD_Y.state_dict(), os.path.join(output_path, 'netD_Y_{}.pth'.format(epoch)))
 
-def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, lr, decay_epoch, cuda, save_model_epoch):
+def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, lr, decay_epoch, d_steps, cuda, save_model_epoch):
 
     if torch.cuda.is_available() and not cuda:
         print('WARNING: You have a CUDA device, so you should probably run with --cuda.')
@@ -142,45 +144,59 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
             optimizer_G.step()
 
-            ###### Discriminator X ######
-            optimizer_D_X.zero_grad()
+            ###### Discriminator ######
+            total_loss_D_X = 0
+            total_loss_D_Y = 0
+            total_acc_D_X = 0
+            total_acc_D_Y = 0
+            for d_step in range(d_steps):
+                ###### Discriminator X ######
+                optimizer_D_X.zero_grad()
 
-            # Real loss
-            pred_real = netD_X(real_X)
-            loss_D_real = criterion_GAN(pred_real, target_real)
+                # Real loss
+                pred_real = netD_X(real_X)
+                loss_D_real = criterion_GAN(pred_real, target_real)
 
-            # Fake loss
-            fake_X = fake_X_buffer.push_and_pop(fake_X)
-            pred_fake = netD_X(fake_X.detach())
-            loss_D_fake = criterion_GAN(pred_fake, target_fake)
-            acc_D_X = (((pred_fake < 0.5) == target_fake_byte).sum().item() + \
-                        ((pred_real >= 0.5) == target_real_byte).sum().item()) / (len(pred_real) + len(pred_fake))
+                # Fake loss
+                fake_X = fake_X_buffer.push_and_pop(fake_X)
+                pred_fake = netD_X(fake_X.detach())
+                loss_D_fake = criterion_GAN(pred_fake, target_fake)
 
-            # Total loss
-            loss_D_X = (loss_D_real + loss_D_fake) * 0.5
-            loss_D_X.backward()
+                total_acc_D_X += (((pred_fake < 0.5) == target_fake_byte).sum().item() + \
+                            ((pred_real >= 0.5) == target_real_byte).sum().item()) / (len(pred_real) + len(pred_fake))
 
-            optimizer_D_X.step()
+                # Total loss
+                loss_D_X = (loss_D_real + loss_D_fake) * 0.5
+                loss_D_X.backward()
+                total_loss_D_X += loss_D_X
 
-            ###### Discriminator Y ######
-            optimizer_D_Y.zero_grad()
+                optimizer_D_X.step()
 
-            # Real loss
-            pred_real = netD_Y(real_Y)
-            loss_D_real = criterion_GAN(pred_real, target_real)
-            
-            # Fake loss
-            fake_Y = fake_Y_buffer.push_and_pop(fake_Y)
-            pred_fake = netD_Y(fake_Y.detach())
-            loss_D_fake = criterion_GAN(pred_fake, target_fake)
-            acc_D_Y = (((pred_fake < 0.5) == target_fake_byte).sum().item() + \
-                        ((pred_real >= 0.5) == target_real_byte).sum().item()) / (len(pred_real) + len(pred_fake))
+                ###### Discriminator Y ######
+                optimizer_D_Y.zero_grad()
 
-            # Total loss
-            loss_D_Y = (loss_D_real + loss_D_fake) * 0.5
-            loss_D_Y.backward()
+                # Real loss
+                pred_real = netD_Y(real_Y)
+                loss_D_real = criterion_GAN(pred_real, target_real)
 
-            optimizer_D_Y.step()
+                # Fake loss
+                fake_Y = fake_Y_buffer.push_and_pop(fake_Y)
+                pred_fake = netD_Y(fake_Y.detach())
+                loss_D_fake = criterion_GAN(pred_fake, target_fake)
+                total_acc_D_Y += (((pred_fake < 0.5) == target_fake_byte).sum().item() + \
+                            ((pred_real >= 0.5) == target_real_byte).sum().item()) / (len(pred_real) + len(pred_fake))
+
+                # Total loss
+                loss_D_Y = (loss_D_real + loss_D_fake) * 0.5
+                loss_D_Y.backward()
+                total_loss_D_Y += loss_D_Y
+
+                optimizer_D_Y.step()
+
+            loss_D_X = total_loss_D_X / d_steps
+            loss_D_Y = total_loss_D_Y / d_steps
+            acc_D_X = total_acc_D_X / d_steps
+            acc_D_Y = total_acc_D_Y / d_steps
 
             # Progress report (http://localhost:8097)
             logger.log({'loss_G': loss_G, 'loss_G_GAN': (loss_GAN_X2Y + loss_GAN_Y2X),
@@ -203,4 +219,4 @@ if __name__ == '__main__':
     args = parse_args()
 
     train(args.content_dataset, args.style_dataset, args.imsize, args.exp_name,
-          args.epochs, args.batch_size, args.lr, args.decay_epoch, args.cuda, args.save_model_epoch)
+          args.epochs, args.batch_size, args.lr, args.decay_epoch, args.d_steps, args.cuda, args.save_model_epoch)
