@@ -28,7 +28,7 @@ $ python -m project.src.style_transfer.itn.eval --dataset PATH_TO_EVAL_SET_DIR -
 
 ## CycleGAN 
 ### Remember to turn on visdom server first:
-$ python -m visdom # open http://localhost:8097/
+$ visdom # open http://localhost:8097/
 
 ### Then run:
 $ python -m project.src.style_transfer.cyclegan.train \
