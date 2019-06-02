@@ -95,10 +95,7 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     lr_scheduler_D_X = torch.optim.lr_scheduler.LambdaLR(optimizer_D_X, lr_lambda=LambdaLR(epochs, 0, decay_epoch).step)
     lr_scheduler_D_Y = torch.optim.lr_scheduler.LambdaLR(optimizer_D_Y, lr_lambda=LambdaLR(epochs, 0, decay_epoch).step)
 
-    # Targets initialization 
-    target_real = torch.tensor(np.zeros(batch_size), requires_grad=False).type(dtype)
-    target_fake = torch.tensor(np.ones(batch_size), requires_grad=False).type(dtype)
-
+    # Buffers initialization
     fake_X_buffer = ReplayBuffer()
     fake_Y_buffer = ReplayBuffer()
 
@@ -115,6 +112,9 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
     for epoch in range(epochs):
         for i, (real_X, real_Y) in enumerate(train_loader):
+            target_real = torch.tensor(np.zeros(len(real_X)), requires_grad=False).type(dtype)
+            target_fake = torch.tensor(np.ones(len(real_X)), requires_grad=False).type(dtype)
+
             ###### Generators X2Y and Y2X ######
             optimizer_G.zero_grad()
 
