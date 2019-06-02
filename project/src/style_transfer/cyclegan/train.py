@@ -96,10 +96,8 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     lr_scheduler_D_Y = torch.optim.lr_scheduler.LambdaLR(optimizer_D_Y, lr_lambda=LambdaLR(epochs, 0, decay_epoch).step)
 
     # Targets initialization 
-    target_real = torch.tensor(np.ones(batch_size), requires_grad=False).type(dtype)
-    target_fake = torch.tensor(np.zeros(batch_size), requires_grad=False).type(dtype)
-    target_real_byte = target_real.type(byte_dtype)
-    target_fake_byte = target_fake.type(byte_dtype)
+    target_real = torch.tensor(np.zeros(batch_size), requires_grad=False).type(dtype)
+    target_fake = torch.tensor(np.ones(batch_size), requires_grad=False).type(dtype)
 
     fake_X_buffer = ReplayBuffer()
     fake_Y_buffer = ReplayBuffer()
@@ -124,12 +122,12 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
             fake_Y = netG_X2Y(real_X)
             pred_fake = netD_Y(fake_Y)
             loss_GAN_X2Y = criterion_GAN(pred_fake, target_real)
-            acc_GAN_X2Y = ((pred_fake >= 0.5) == target_real_byte).sum().item() / len(pred_fake)
+            acc_GAN_X2Y = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake)
 
             fake_X = netG_Y2X(real_Y)
             pred_fake = netD_X(fake_X)
             loss_GAN_Y2X = criterion_GAN(pred_fake, target_real)
-            acc_GAN_Y2X = ((pred_fake >= 0.5) == target_real_byte).sum().item() / len(pred_fake)
+            acc_GAN_Y2X = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake)
 
             # Cycle loss
             recovered_X = netG_Y2X(fake_Y)
@@ -162,8 +160,8 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
                 pred_fake = netD_X(fake_X.detach())
                 loss_D_fake = criterion_GAN(pred_fake, target_fake)
 
-                total_acc_D_X += (((pred_fake < 0.5) == target_fake_byte).sum().item() + \
-                            ((pred_real >= 0.5) == target_real_byte).sum().item()) / (len(pred_real) + len(pred_fake))
+                total_acc_D_X += (((pred_fake >= 0.5) == True).sum().item() + \
+                                    ((pred_real < 0.5) == True).sum().item()) / (len(pred_real) + len(pred_fake))
 
                 # Total loss
                 loss_D_X = (loss_D_real + loss_D_fake) * 0.5
@@ -183,8 +181,9 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
                 fake_Y = fake_Y_buffer.push_and_pop(fake_Y)
                 pred_fake = netD_Y(fake_Y.detach())
                 loss_D_fake = criterion_GAN(pred_fake, target_fake)
-                total_acc_D_Y += (((pred_fake < 0.5) == target_fake_byte).sum().item() + \
-                            ((pred_real >= 0.5) == target_real_byte).sum().item()) / (len(pred_real) + len(pred_fake))
+
+                total_acc_D_X += (((pred_fake >= 0.5) == True).sum().item() + \
+                                    ((pred_real < 0.5) == True).sum().item()) / (len(pred_real) + len(pred_fake))
 
                 # Total loss
                 loss_D_Y = (loss_D_real + loss_D_fake) * 0.5
