@@ -36,7 +36,7 @@ def parse_args():
 
 def train(dataset, style_image, imsize, epochs, batch_size, output_model_path, log_epochs=10, save_epochs=10):
     # Load training dataset
-    train_set = Dataset(dataset, imsize)
+    train_set = Dataset(dataset, imsize, dtype=dtype)
     train_loader = data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
     # Load target style image

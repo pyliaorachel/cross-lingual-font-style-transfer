@@ -29,7 +29,7 @@ def parse_args():
 
 def evaluate(dataset, imsize, model_path, output_dir):
     # Load eval dataset
-    eval_set = Dataset(dataset, imsize)
+    eval_set = Dataset(dataset, imsize, dtype=dtype)
     loader = data.DataLoader(eval_set)
 
     # Load network

@@ -109,3 +109,5 @@ venv.bak/
 # Others
 .DS_Store
 *.swp
+project/data/*
+project/output/*

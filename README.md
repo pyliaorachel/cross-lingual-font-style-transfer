@@ -24,7 +24,19 @@ $ python -m project.src.style_transfer.neural_style_transfer.train --content PAT
 
 ## Image Transformation Network 
 $ python -m project.src.style_transfer.itn.train --dataset PATH_TO_TRAIN_SET_DIR --style PATH_TO_STYLE_IMAGE --output-model PATH_TO_OUTPUT_MODEL --imsize IMAGE_SIZE --epochs EPOCHS --batch-size BATCH_SIZE --log-epochs LOG_EPOCHS --save-epochs SAVE_EPOCHS
-$ python -m project.src.style_transfer.itn.eval --dataset PATH_TO_EVAL_SET_DIR --model PATH_TO_MODEL --imsize IMAGE_SIZE --output-dir OUTPUT_DIRECTORY
+$ python -m project.src.style_transfer.itn.eval --dataset PATH_TO_EVAL_SET_DIR --model PATH_TO_MODEL --imsize IMAGE_SIZE --output-dir OUTPUT_DIR
+
+## CycleGAN 
+### Remember to turn on visdom server first:
+$ visdom # open http://localhost:8097/
+
+### Then run:
+$ python -m project.src.style_transfer.cyclegan.train \
+    --content-dataset PATH_TO_CONTENT_TRAIN_SET_DIR --style-dataset PATH_TO_STYLE_TRAIN_SET_DIR \
+    --imsize IMAGE_SIZE --exp-name EXPERIMENT_NAME \
+    [--epochs EPOCHS] [--batch-size BATCH_SIZE] [--lr LEARNING_RATE] [--decay-epoch DECAY_EPOCH] [--cuda]
+$ python -m project.src.style_transfer.cyclegan.eval \
+    --dataset PATH_TO_EVAL_SET_DIR --imsize IMAGE_SIZE --exp-name EXPERIMENT_NAME [--cuda]
 ```
 
 ## Sample Output
@@ -44,3 +56,4 @@ $ python -m project.src.style_transfer.itn.eval --dataset PATH_TO_EVAL_SET_DIR -
 ## References
 
 - [Neural Artistic Style Transfer: A Comprehensive Look](https://medium.com/artists-and-machine-intelligence/neural-artistic-style-transfer-a-comprehensive-look-f54d8649c199)
+- [GitHub: aitorzip/PyTorch-CycleGAN](https://github.com/aitorzip/PyTorch-CycleGAN)

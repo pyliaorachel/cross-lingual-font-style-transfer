@@ -3,11 +3,12 @@ channels:
   - pytorch
   - defaults
 dependencies:
+  - cudatoolkit=10.0.130
   - numpy=1.16.3
-  - scipy=1.2.1
   - python=3.7.3
   - pytorch=1.1.0
-  - torchvision=0.2.2
+  - scipy=1.2.1
+  - torchvision=0.3.0
   - pip:
     - visdom==0.1.8.8
 prefix: /anaconda3/envs/style_transfer
