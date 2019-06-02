@@ -26,10 +26,13 @@ class Logger():
         self.losses = {}
         self.loss_windows_batch = {}
         self.loss_windows = {}
+        self.accs = {}
+        self.acc_windows_batch = {}
+        self.acc_windows = {}
         self.image_windows = {}
         self.log_per_iter = log_per_iter
 
-    def log(self, losses=None, images=None):
+    def log(self, losses=None, accs=None, images=None):
         self.mean_period += (time.time() - self.prev_time)
         self.prev_time = time.time()
 
@@ -41,10 +44,18 @@ class Logger():
             else:
                 self.losses[loss_name] += losses[loss_name].item()
 
-            if (i+1) == len(losses.keys()):
-                sys.stdout.write('%s: %.4f -- ' % (loss_name, self.losses[loss_name]/self.batch))
+            sys.stdout.write('%s: %.4f | ' % (loss_name, self.losses[loss_name]/self.batch))
+
+        for i, acc_name in enumerate(accs.keys()):
+            if acc_name not in self.accs:
+                self.accs[acc_name] = accs[acc_name]
             else:
-                sys.stdout.write('%s: %.4f | ' % (loss_name, self.losses[loss_name]/self.batch))
+                self.accs[acc_name] += accs[acc_name]
+
+            if (i+1) == len(accs.keys()):
+                sys.stdout.write('%s: %.4f -- ' % (acc_name, self.accs[acc_name]/self.batch))
+            else:
+                sys.stdout.write('%s: %.4f | ' % (acc_name, self.accs[acc_name]/self.batch))
 
         batches_done = self.batches_epoch*(self.epoch - 1) + self.batch
         batches_left = self.batches_epoch*(self.n_epochs - self.epoch) + self.batches_epoch - self.batch 
@@ -69,6 +80,16 @@ class Logger():
                 # Reset losses for next epoch
                 self.losses[loss_name] = 0.0
 
+            # Plot accuracies
+            for acc_name, acc in self.accs.items():
+                if acc_name not in self.acc_windows_batch:
+                    self.acc_windows_batch[acc_name] = self.viz.line(X=np.array([self.epoch]), Y=np.array([acc/self.batch]),
+                                                                       opts={'xlabel': 'epochs', 'ylabel': acc_name, 'title': acc_name})
+                else:
+                    self.viz.line(X=np.array([self.epoch]), Y=np.array([acc/self.batch]), win=self.acc_windows_batch[acc_name], update='append')
+                # Reset accs for next epoch
+                self.accs[acc_name] = 0.0
+
             self.epoch += 1
             self.batch = 1
             sys.stdout.write('\n')
@@ -85,6 +106,15 @@ class Logger():
                     self.viz.line(X=np.array([self.iter]), Y=np.array([loss]), win=self.loss_windows[loss_name], update='append')
                 # Reset losses for next epoch
                 self.losses[loss_name] = 0.0
+
+            for acc_name, acc in self.accs.items():
+                if acc_name not in self.acc_windows:
+                    self.acc_windows[acc_name] = self.viz.line(X=np.array([self.iter]), Y=np.array([acc]),
+                                                                 opts={'xlabel': 'iterations', 'ylabel': acc_name, 'title': acc_name})
+                else:
+                    self.viz.line(X=np.array([self.iter]), Y=np.array([acc]), win=self.acc_windows[acc_name], update='append')
+                # Reset accs for next epoch
+                self.accs[acc_name] = 0.0
 
             self.iter += 1
             sys.stdout.write('\n')
