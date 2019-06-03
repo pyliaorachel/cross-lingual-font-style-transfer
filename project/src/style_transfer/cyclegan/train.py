@@ -17,7 +17,12 @@ from .utils import ReplayBuffer, LambdaLR, Logger
 from ..utils.utils import *
 from ..utils.dataset import PairedDataset
 
+ID_LOSS = True
+
+GAN_LOSS_W = 1
 CYCLE_LOSS_W = 10.0
+ID_LOSS_W = 5.0
+D_LR_W = 1
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -84,6 +89,7 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     # Lossess
     criterion_GAN = torch.nn.MSELoss()
     criterion_cycle = torch.nn.L1Loss()
+    criterion_identity = torch.nn.L1Loss()
 
     # Optimizers & LR schedulers
     optimizer_G = torch.optim.Adam(itertools.chain(netG_X2Y.parameters(), netG_Y2X.parameters()),
@@ -120,15 +126,25 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
             ###### Generators X2Y and Y2X ######
             optimizer_G.zero_grad()
 
+            if ID_LOSS:
+                # Identity loss
+                # G_X2Y(Y) should equal Y if real Y is fed
+                same_Y = netG_X2Y(real_Y)
+                loss_identity_Y = criterion_identity(same_Y, real_Y) * ID_LOSS_W
+
+                # G_Y2X(X) should equal X if real X is fed
+                same_X = netG_Y2X(real_X)
+                loss_identity_X = criterion_identity(same_X, real_X) * ID_LOSS_W
+
             # GAN loss
             fake_Y = netG_X2Y(real_X)
             pred_fake = netD_Y(fake_Y)
-            loss_GAN_X2Y = criterion_GAN(pred_fake, target_real)
+            loss_GAN_X2Y = criterion_GAN(pred_fake, target_real) * GAN_LOSS_W
             acc_GAN_X2Y = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake)
 
             fake_X = netG_Y2X(real_Y)
             pred_fake = netD_X(fake_X)
-            loss_GAN_Y2X = criterion_GAN(pred_fake, target_real)
+            loss_GAN_Y2X = criterion_GAN(pred_fake, target_real) * GAN_LOSS_W
             acc_GAN_Y2X = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake)
 
             # Cycle loss
@@ -139,7 +155,10 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
             loss_cycle_YXY = criterion_cycle(recovered_Y, real_Y) * CYCLE_LOSS_W 
 
             # Total loss
-            loss_G = loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_XYX + loss_cycle_YXY
+            if ID_LOSS:
+                loss_G = loss_identity_X + loss_identity_Y + loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_XYX + loss_cycle_YXY
+            else:
+                loss_G = loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_XYX + loss_cycle_YXY
             loss_G.backward()
 
             optimizer_G.step()
@@ -155,12 +174,12 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
                 # Real loss
                 pred_real = netD_X(real_X)
-                loss_D_real = criterion_GAN(pred_real, target_real)
+                loss_D_real = criterion_GAN(pred_real, target_real) * GAN_LOSS_W
 
                 # Fake loss
                 fake_X = fake_X_buffer.push_and_pop(fake_X)
                 pred_fake = netD_X(fake_X.detach())
-                loss_D_fake = criterion_GAN(pred_fake, target_fake)
+                loss_D_fake = criterion_GAN(pred_fake, target_fake) * GAN_LOSS_W
 
                 total_acc_D_X += (((pred_fake >= 0.5) == True).sum().item() + \
                                     ((pred_real < 0.5) == True).sum().item()) / (len(pred_real) + len(pred_fake))
@@ -177,12 +196,12 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
                 # Real loss
                 pred_real = netD_Y(real_Y)
-                loss_D_real = criterion_GAN(pred_real, target_real)
+                loss_D_real = criterion_GAN(pred_real, target_real) * GAN_LOSS_W
 
                 # Fake loss
                 fake_Y = fake_Y_buffer.push_and_pop(fake_Y)
                 pred_fake = netD_Y(fake_Y.detach())
-                loss_D_fake = criterion_GAN(pred_fake, target_fake)
+                loss_D_fake = criterion_GAN(pred_fake, target_fake) * GAN_LOSS_W
 
                 total_acc_D_X += (((pred_fake >= 0.5) == True).sum().item() + \
                                     ((pred_real < 0.5) == True).sum().item()) / (len(pred_real) + len(pred_fake))
@@ -200,11 +219,18 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
             acc_D_Y = total_acc_D_Y / d_steps
 
             # Progress report (http://localhost:8097)
-            logger.log({'loss_G': loss_G, 'loss_G_GAN': (loss_GAN_X2Y + loss_GAN_Y2X),
-                        'loss_G_cycle': (loss_cycle_XYX + loss_cycle_YXY), 'loss_D': (loss_D_X + loss_D_Y)}, 
-                        {'acc_G_GAN': (acc_GAN_X2Y + acc_GAN_Y2X) / 2, 'acc_D': (acc_D_X + acc_D_Y) / 2},
-                        images={'real_X': real_X, 'real_Y': real_Y, 'fake_X': fake_X, 'fake_Y': fake_Y,
-                                'recovered_X': recovered_X, 'recovered_Y': recovered_Y})
+            if ID_LOSS:
+                logger.log({'loss_G': loss_G, 'loss_G_GAN': (loss_GAN_X2Y + loss_GAN_Y2X), 'loss_G_cycle': (loss_cycle_XYX + loss_cycle_YXY),
+                            'loss_G_identity': (loss_identity_X + loss_identity_Y), 'loss_D': (loss_D_X + loss_D_Y)},
+                            {'acc_G_GAN': (acc_GAN_X2Y + acc_GAN_Y2X) / 2, 'acc_D': (acc_D_X + acc_D_Y) / 2},
+                            images={'real_X': real_X, 'real_Y': real_Y, 'fake_X': fake_X, 'fake_Y': fake_Y,
+                                    'recovered_X': recovered_X, 'recovered_Y': recovered_Y})
+            else:
+                logger.log({'loss_G': loss_G, 'loss_G_GAN': (loss_GAN_X2Y + loss_GAN_Y2X),
+                            'loss_G_cycle': (loss_cycle_XYX + loss_cycle_YXY), 'loss_D': (loss_D_X + loss_D_Y)},
+                            {'acc_G_GAN': (acc_GAN_X2Y + acc_GAN_Y2X) / 2, 'acc_D': (acc_D_X + acc_D_Y) / 2},
+                            images={'real_X': real_X, 'real_Y': real_Y, 'fake_X': fake_X, 'fake_Y': fake_Y,
+                                    'recovered_X': recovered_X, 'recovered_Y': recovered_Y})
 
         # Update learning rates
         lr_scheduler_G.step()
