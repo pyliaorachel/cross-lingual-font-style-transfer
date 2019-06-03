@@ -18,6 +18,7 @@ from ..utils.utils import *
 from ..utils.dataset import PairedDataset
 
 ID_LOSS = True
+SGD = False
 
 GAN_LOSS_W = 1
 CYCLE_LOSS_W = 10.0
@@ -93,9 +94,13 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
     # Optimizers & LR schedulers
     optimizer_G = torch.optim.Adam(itertools.chain(netG_X2Y.parameters(), netG_Y2X.parameters()),
-                                    lr=lr, betas=(0.5, 0.999))
-    optimizer_D_X = torch.optim.Adam(netD_X.parameters(), lr=lr, betas=(0.5, 0.999))
-    optimizer_D_Y = torch.optim.Adam(netD_Y.parameters(), lr=lr, betas=(0.5, 0.999))
+                                   lr=lr, betas=(0.5, 0.999))
+    if SGD:
+        optimizer_D_X = torch.optim.SGD(netD_X.parameters(), lr=lr*D_LR_W*0.1)
+        optimizer_D_Y = torch.optim.SGD(netD_Y.parameters(), lr=lr*D_LR_W*0.1)
+    else:
+        optimizer_D_X = torch.optim.Adam(netD_X.parameters(), lr=lr*D_LR_W, betas=(0.5, 0.999))
+        optimizer_D_Y = torch.optim.Adam(netD_Y.parameters(), lr=lr*D_LR_W, betas=(0.5, 0.999))
 
     lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=LambdaLR(epochs, 0, decay_epoch).step)
     lr_scheduler_D_X = torch.optim.lr_scheduler.LambdaLR(optimizer_D_X, lr_lambda=LambdaLR(epochs, 0, decay_epoch).step)
