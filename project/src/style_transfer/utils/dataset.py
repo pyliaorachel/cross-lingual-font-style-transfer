@@ -34,8 +34,6 @@ class PairedDataset(data.Dataset):
         self.paired_list_IDs = self.get_list_IDs(paired_dataset)
         self.n_paired = len(self.paired_list_IDs)
 
-        assert len(self.list_IDs) >= len(self.paired_list_IDs)
-
     def get_list_IDs(self, dataset):
         return [os.path.join(dataset, fname) for fname in os.listdir(dataset) if is_image_file(os.path.join(dataset, fname))]
 
