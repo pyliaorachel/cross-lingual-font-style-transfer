@@ -168,6 +168,9 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
             optimizer_G.step()
 
+            G_fake_X = fake_X
+            G_fake_Y = fake_Y
+
             ###### Discriminator ######
             total_loss_D_X = 0
             total_loss_D_Y = 0
@@ -228,13 +231,13 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
                 logger.log({'loss_G': loss_G, 'loss_G_GAN': (loss_GAN_X2Y + loss_GAN_Y2X), 'loss_G_cycle': (loss_cycle_XYX + loss_cycle_YXY),
                             'loss_G_identity': (loss_identity_X + loss_identity_Y), 'loss_D': (loss_D_X + loss_D_Y)},
                             {'acc_G_GAN': (acc_GAN_X2Y + acc_GAN_Y2X) / 2, 'acc_D': (acc_D_X + acc_D_Y) / 2},
-                            images={'real_X': real_X, 'real_Y': real_Y, 'fake_X': fake_X, 'fake_Y': fake_Y,
+                            images={'real_X': real_X, 'real_Y': real_Y, 'fake_X': G_fake_X, 'fake_Y': G_fake_Y,
                                     'recovered_X': recovered_X, 'recovered_Y': recovered_Y})
             else:
                 logger.log({'loss_G': loss_G, 'loss_G_GAN': (loss_GAN_X2Y + loss_GAN_Y2X),
                             'loss_G_cycle': (loss_cycle_XYX + loss_cycle_YXY), 'loss_D': (loss_D_X + loss_D_Y)},
                             {'acc_G_GAN': (acc_GAN_X2Y + acc_GAN_Y2X) / 2, 'acc_D': (acc_D_X + acc_D_Y) / 2},
-                            images={'real_X': real_X, 'real_Y': real_Y, 'fake_X': fake_X, 'fake_Y': fake_Y,
+                            images={'real_X': real_X, 'real_Y': real_Y, 'fake_X': G_fake_X, 'fake_Y': G_fake_Y,
                                     'recovered_X': recovered_X, 'recovered_Y': recovered_Y})
 
         # Update learning rates
