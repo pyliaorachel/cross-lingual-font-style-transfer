@@ -44,27 +44,40 @@ $ python -m project.src.style_transfer.cyclegan.eval \
 
 ## Sample Output
 
-##### Neural Style Transfer
+### Neural Style Transfer
 
-###### Normal Image
+||Style|Content|Transfered|
+|:-:|:-:|:-:|:-:|
+|Normal|<img src="img/neural_style_transfer/normal/style.jpg?raw=true" width="64px" height="64px"/>|<img src="img/neural_style_transfer/normal/content.jpg?raw=true" width="64px" height="64px"/>|<img src="img/neural_style_transfer/normal/pastiche.png?raw=true" width="64px" height="64px"/>|
+|Font|<img src="img/neural_style_transfer/font/style.png?raw=true" width="64px" height="64px"/>|<img src="img/neural_style_transfer/font/content.png?raw=true" width="64px" height="64px"/>|<img src="img/neural_style_transfer/font/pastiche.png?raw=true" width="64px" height="64px"/>|
 
-<p align="center">
-    <img src="img/neural_style_transfer/normal/style.jpg?raw=true" width="128px" height="128px"/>
-    <span> + </span>
-    <img src="img/neural_style_transfer/normal/content.jpg?raw=true" width="128px" height="128px"/>
-    <span> = </span>
-    <img src="img/neural_style_transfer/normal/pastiche.png?raw=true" width="128px" height="128px"/>
-</p>
+## Feature Comparisons
 
-###### Font Image
+### CycleGAN
 
-<p align="center">
-    <img src="img/neural_style_transfer/font/style.jpg?raw=true" width="128px" height="128px"/>
-    <span> + </span>
-    <img src="img/neural_style_transfer/font/content.jpg?raw=true" width="128px" height="128px"/>
-    <span> = </span>
-    <img src="img/neural_style_transfer/font/pastiche.png?raw=true" width="128px" height="128px"/>
-</p>
+#### Image Cropping
+
+Image data are cropped before feeding into the discriminators to pervent them from learning that in general Chinese characters have more dark pixels than English characters in the images. We cropped at center for English characters (style) and cropped randomly at anywhere for Chinese characters (content).
+
+Here are some intermediate results after training the model for a few iterations.
+
+||Style|Content|Transfered|
+|:-:|:-:|:-:|:-:|
+|Without Cropping|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/original.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/transfered.jpg" width="64px" height="64px"/>|
+|With Cropping|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/original.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/transfered.jpg?raw=true" width="64px" height="64px"/>|
+
+#### Content Loss
+
+After training for longer, we found that the transfered images tend to white out, i.e. the pixel values are very close to `255` everywhere. While the pixels that are not `255` do encode the information of the content (and hence the recovered image can be very close to the original one), we would like the transfered image to also look not too different from the original content image.
+
+Hence another content loss is introduced, which the early layer outputs from the `X2Y` generator and `Y2X` generator are enforced to be close to each other.
+
+Here are some intermediate results after training the model for one epoch. We have pulled the non-255 pixels down to zero to show the content of the transfered images.
+
+||Style|Content|Transfered|Transfered (contrast)|Recovered|
+|:-:|:-:|:-:|:-:|:-:|:-:|
+|Without Content Loss|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/original.png" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/without/transfered.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/without/transfered_contrast.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/without/recovered.jpg" width="64px" height="64px"/>|
+|With Content Loss|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/original.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/transfered.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/transfered_contrast.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/recovered.jpg?raw=true" width="64px" height="64px"/>|
 
 ## References
 
