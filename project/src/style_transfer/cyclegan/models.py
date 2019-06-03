@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .utils import weights_init_normal
+from .utils import weights_init_normal, crop
 
 
 class ResidualBlock(nn.Module):
@@ -112,7 +112,9 @@ class Discriminator(nn.Module):
     def release_device(self):
         self.cpu()
 
-    def forward(self, x):
+    def forward(self, x, crop_image=False, crop_type=None):
+        if crop_image:
+            x = crop(x, crop_type)
         x =  self.model(x)
         # Average pooling and flatten
         return F.avg_pool2d(x, x.size()[2:]).view(x.size()[0])
