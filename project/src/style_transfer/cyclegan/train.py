@@ -112,8 +112,10 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
     for epoch in range(epochs):
         for i, (real_X, real_Y) in enumerate(train_loader):
-            target_real = torch.tensor(np.zeros(len(real_X)), requires_grad=False).type(dtype)
-            target_fake = torch.tensor(np.ones(len(real_X)), requires_grad=False).type(dtype)
+            target_fake = torch.rand((len(real_X),)) * 0.5 + 0.7 # soft label: 0.7 - 1.2
+            target_real = torch.rand((len(real_X),)) * 0.3       # soft label: 0 - 0.3
+            target_real = target_real.type(dtype)
+            target_fake = target_fake.type(dtype)
 
             ###### Generators X2Y and Y2X ######
             optimizer_G.zero_grad()
