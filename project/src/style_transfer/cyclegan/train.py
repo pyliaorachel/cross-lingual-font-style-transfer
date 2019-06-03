@@ -19,6 +19,7 @@ from ..utils.dataset import PairedDataset
 
 ID_LOSS = True
 SGD = False
+CROP_IMAGE = True
 
 GAN_LOSS_W = 1
 CYCLE_LOSS_W = 10.0
@@ -143,12 +144,12 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
             # GAN loss
             fake_Y = netG_X2Y(real_X)
-            pred_fake = netD_Y(fake_Y)
+            pred_fake = netD_Y(fake_Y, crop_image=CROP_IMAGE, crop_type='random')
             loss_GAN_X2Y = criterion_GAN(pred_fake, target_real) * GAN_LOSS_W
             acc_GAN_X2Y = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake)
 
             fake_X = netG_Y2X(real_Y)
-            pred_fake = netD_X(fake_X)
+            pred_fake = netD_X(fake_X, crop_image=CROP_IMAGE, crop_type='center')
             loss_GAN_Y2X = criterion_GAN(pred_fake, target_real) * GAN_LOSS_W
             acc_GAN_Y2X = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake)
 
@@ -181,12 +182,12 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
                 optimizer_D_X.zero_grad()
 
                 # Real loss
-                pred_real = netD_X(real_X)
+                pred_real = netD_X(real_X, crop_image=CROP_IMAGE, crop_type='random')
                 loss_D_real = criterion_GAN(pred_real, target_real) * GAN_LOSS_W
 
                 # Fake loss
                 fake_X = fake_X_buffer.push_and_pop(fake_X)
-                pred_fake = netD_X(fake_X.detach())
+                pred_fake = netD_X(fake_X.detach(), crop_image=CROP_IMAGE, crop_type='center')
                 loss_D_fake = criterion_GAN(pred_fake, target_fake) * GAN_LOSS_W
 
                 total_acc_D_X += (((pred_fake >= 0.5) == True).sum().item() + \
@@ -203,12 +204,12 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
                 optimizer_D_Y.zero_grad()
 
                 # Real loss
-                pred_real = netD_Y(real_Y)
+                pred_real = netD_Y(real_Y, crop_image=CROP_IMAGE, crop_type='center')
                 loss_D_real = criterion_GAN(pred_real, target_real) * GAN_LOSS_W
 
                 # Fake loss
                 fake_Y = fake_Y_buffer.push_and_pop(fake_Y)
-                pred_fake = netD_Y(fake_Y.detach())
+                pred_fake = netD_Y(fake_Y.detach(), crop_image=CROP_IMAGE, crop_type='random')
                 loss_D_fake = criterion_GAN(pred_fake, target_fake) * GAN_LOSS_W
 
                 total_acc_D_X += (((pred_fake >= 0.5) == True).sum().item() + \

@@ -156,3 +156,35 @@ def weights_init_normal(m):
         torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
         torch.nn.init.constant_(m.bias.data, 0.0)
 
+def center_crop(t_img, ratio=0.25):
+    if ratio >= 1:
+        return t_img
+    h, w = t_img.size()[-2:]
+    crop_h, crop_w = h * ratio, w * ratio
+    start_h, end_h, start_w, end_w = int(h // 2 - crop_h // 2), int(h // 2 + crop_h // 2), int(w // 2 - crop_w // 2), int(w // 2 + crop_w // 2)
+
+    if len(t_img.size()) == 3:
+        return t_img[:, start_h:end_h, start_w:end_w]
+    else:
+        return t_img[:, :, start_h:end_h, start_w:end_w]
+
+def random_crop(t_img, ratio=0.25):
+    if ratio >= 1:
+        return t_img
+    h, w = t_img.size()[-2:]
+    crop_h, crop_w = h * ratio, w * ratio
+
+    start_h, start_w = int((h - crop_h) * random.random()), int((w - crop_w) * random.random())
+    end_h, end_w = int(start_h + crop_h), int(start_w + crop_w)
+
+    if len(t_img.size()) == 3:
+        return t_img[:, start_h:end_h, start_w:end_w]
+    else:
+        return t_img[:, :, start_h:end_h, start_w:end_w]
+
+def crop(t_img, crop_type=None, ratio=0.25):
+    if crop_type == 'center':
+        return center_crop(t_img, ratio=ratio)
+    elif crop_type == 'random':
+        return random_crop(t_img, ratio=ratio)
+    return t_img
