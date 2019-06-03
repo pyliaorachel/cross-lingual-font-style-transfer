@@ -13,6 +13,8 @@ Cross-lingual font style transfer from English fonts to Chinese characters.
 
 ## Usage 
 
+Run `python -m xxx -h` for detailed usage of each script and its options.
+
 ```bash
 # Create virtual environment
 $ conda env create -f environment.yml
@@ -36,7 +38,8 @@ $ python -m project.src.style_transfer.cyclegan.train \
     --imsize IMAGE_SIZE --exp-name EXPERIMENT_NAME \
     [--epochs EPOCHS] [--batch-size BATCH_SIZE] [--lr LEARNING_RATE] [--decay-epoch DECAY_EPOCH] [--d-steps D_STEPS] [--cuda]
 $ python -m project.src.style_transfer.cyclegan.eval \
-    --dataset PATH_TO_EVAL_SET_DIR --imsize IMAGE_SIZE --exp-name EXPERIMENT_NAME [--cuda]
+    --dataset PATH_TO_EVAL_SET_DIR --imsize IMAGE_SIZE --img-nc IMAGE_NUM_CHANNELS --exp-name EXPERIMENT_NAME --epoch EPOCH
+    [--cuda] [--show]
 ```
 
 ## Sample Output
