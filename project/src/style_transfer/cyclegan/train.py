@@ -55,7 +55,7 @@ def parse_args():
     return parser.parse_args()
 
 def save_models(netG_X2Y, netG_Y2X, netD_X, netD_Y, output_path, epoch=None):
-    if not epoch:
+    if epoch is None:
         torch.save(netG_X2Y.state_dict(), os.path.join(output_path, 'netG_X2Y.pth'))
         torch.save(netG_Y2X.state_dict(), os.path.join(output_path, 'netG_Y2X.pth'))
         torch.save(netD_X.state_dict(), os.path.join(output_path, 'netD_X.pth'))
