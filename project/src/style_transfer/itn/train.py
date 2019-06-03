@@ -4,7 +4,8 @@ import argparse
 from torch.utils import data
 import torchvision.datasets as datasets
 
-from .net import ITN 
+from .net import ITN
+from .utils import ReplayBuffer, LambdaLR, Logger
 from ..utils.utils import *
 from ..utils.dataset import Dataset
 
@@ -42,12 +43,22 @@ def train(dataset, style_image, imsize, epochs, batch_size, output_model_path, l
     # Load target style image
     style = image_loader(style_image, imsize).type(dtype)
 
+    # Loss plot
+    logger = Logger(epochs, len(train_loader), log_per_iter=True)
+
     # Train network
     itn = ITN(style)
 
     for i in range(epochs):
         for train_batch, _ in train_loader:
             pastiche, content_loss, style_loss = itn.train(train_batch)
+
+            # progress report
+            logger.log(losses={'content_loss': content_loss, 'style_loss': style_loss}, 
+                       accs={}, 
+                    images={'train_batch': train_batch,'style_image': style_image,
+                            'pastiche': pastiche})
+
 
             if i % log_epochs == 0:
                 print('Epoch: {}, content loss: {}, style loss: {}'.format(i, content_loss, style_loss))

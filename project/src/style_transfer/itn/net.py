@@ -39,7 +39,7 @@ class ITN(object):
             nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1),
             nn.Conv2d(32, 3, 9, stride=1, padding=4),
         )
-        self.optimizer = optim.Adam(self.transform_network.parameters(), lr=1e-3)
+        self.optimizer = optim.Adam(self.transform_network.parameters(), lr=1e-4)
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.gram.to(self.device)
