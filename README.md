@@ -46,11 +46,21 @@ $ python -m project.src.style_transfer.cyclegan.eval \
 ###### Normal Image
 
 <p align="center">
-    <img src="img/neural_style_transfer/style.jpg?raw=true" width="128px" height="128px"/>
+    <img src="img/neural_style_transfer/normal/style.jpg?raw=true" width="128px" height="128px"/>
     <span> + </span>
-    <img src="img/neural_style_transfer/content.jpg?raw=true" width="128px" height="128px"/>
+    <img src="img/neural_style_transfer/normal/content.jpg?raw=true" width="128px" height="128px"/>
     <span> = </span>
-    <img src="img/neural_style_transfer/pastiche.png?raw=true" width="128px" height="128px"/>
+    <img src="img/neural_style_transfer/normal/pastiche.png?raw=true" width="128px" height="128px"/>
+</p>
+
+###### Font Image
+
+<p align="center">
+    <img src="img/neural_style_transfer/font/style.jpg?raw=true" width="128px" height="128px"/>
+    <span> + </span>
+    <img src="img/neural_style_transfer/font/content.jpg?raw=true" width="128px" height="128px"/>
+    <span> = </span>
+    <img src="img/neural_style_transfer/font/pastiche.png?raw=true" width="128px" height="128px"/>
 </p>
 
 ## References
