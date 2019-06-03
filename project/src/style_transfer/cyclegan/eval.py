@@ -18,6 +18,8 @@ def parse_args():
                         help='Path to test dataset.')
     parser.add_argument('--imsize', type=int, required=True,
                         help='Image size.')
+    parser.add_argument('--img-nc', type=int, default=3,
+                        help='Number of channels in image.')
     parser.add_argument('--exp-name', type=str, required=True,
                         help='Experiment name.')
     parser.add_argument('--epoch', type=int, default=-1,
@@ -29,7 +31,7 @@ def parse_args():
 
     return parser.parse_args()
 
-def evaluate(dataset, imsize, exp_name, epoch, cuda, show):
+def evaluate(dataset, imsize, img_nc, exp_name, epoch, cuda, show):
 
     if torch.cuda.is_available() and not cuda:
         print('WARNING: You have a CUDA device, so you should probably run with --cuda.')
@@ -40,8 +42,8 @@ def evaluate(dataset, imsize, exp_name, epoch, cuda, show):
 
     ###### Definition of variables ######
     # Networks
-    netG_X2Y = Generator(device=device)
-    netG_Y2X = Generator(device=device)
+    netG_X2Y = Generator(input_nc=img_nc, output_nc=img_nc, device=device)
+    netG_Y2X = Generator(input_nc=img_nc, output_nc=img_nc, device=device)
 
     # Load state dicts
     model_path = 'project/output/{}'.format(exp_name)
@@ -61,7 +63,7 @@ def evaluate(dataset, imsize, exp_name, epoch, cuda, show):
     netG_Y2X.eval()
 
     # Dataset loader
-    eval_set = Dataset(dataset, imsize, dtype=dtype)
+    eval_set = Dataset(dataset, imsize, dtype=dtype, input_nc=img_nc)
     eval_loader = DataLoader(eval_set)
 
     ###### Testing######
@@ -103,4 +105,4 @@ def evaluate(dataset, imsize, exp_name, epoch, cuda, show):
 if __name__ == '__main__':
     args = parse_args()
 
-    evaluate(args.dataset, args.imsize, args.exp_name, args.epoch, args.cuda, args.show)
+    evaluate(args.dataset, args.imsize, args.img_nc, args.exp_name, args.epoch, args.cuda, args.show)

@@ -26,6 +26,7 @@ GAN_LOSS_W = 1
 CYCLE_LOSS_W = 10.0
 ID_LOSS_W = 5.0
 D_LR_W = 1
+IMG_NC = 1
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -79,10 +80,10 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
     ###### Definition of variables ######
     # Networks
-    netG_X2Y = Generator(device=device)
-    netG_Y2X = Generator(device=device)
-    netD_X = Discriminator(device=device)
-    netD_Y = Discriminator(device=device)
+    netG_X2Y = Generator(input_nc=IMG_NC, output_nc=IMG_NC, device=device)
+    netG_Y2X = Generator(input_nc=IMG_NC, output_nc=IMG_NC, device=device)
+    netD_X = Discriminator(input_nc=IMG_NC, device=device)
+    netD_Y = Discriminator(input_nc=IMG_NC, device=device)
 
     netG_X2Y.to_device()
     netG_Y2X.to_device()
@@ -114,7 +115,7 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     fake_Y_buffer = ReplayBuffer()
 
     # Dataset loader
-    train_set = PairedDataset(content_dataset, style_dataset, imsize, dtype=dtype)
+    train_set = PairedDataset(content_dataset, style_dataset, imsize, dtype=dtype, input_nc=IMG_NC)
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
     # Loss plot
