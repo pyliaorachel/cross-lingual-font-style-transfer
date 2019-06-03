@@ -17,6 +17,7 @@ from .utils import ReplayBuffer, LambdaLR, Logger
 from ..utils.utils import *
 from ..utils.dataset import PairedDataset
 
+CONTENT_LOSS = True
 ID_LOSS = True
 SGD = False
 CROP_IMAGE = True
@@ -92,6 +93,7 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     criterion_GAN = torch.nn.MSELoss()
     criterion_cycle = torch.nn.L1Loss()
     criterion_identity = torch.nn.L1Loss()
+    criterion_content = torch.nn.MSELoss()
 
     # Optimizers & LR schedulers
     optimizer_G = torch.optim.Adam(itertools.chain(netG_X2Y.parameters(), netG_Y2X.parameters()),
@@ -135,36 +137,42 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
             if ID_LOSS:
                 # Identity loss
                 # G_X2Y(Y) should equal Y if real Y is fed
-                same_Y = netG_X2Y(real_Y)
+                same_Y, _ = netG_X2Y(real_Y)
                 loss_identity_Y = criterion_identity(same_Y, real_Y) * ID_LOSS_W
 
                 # G_Y2X(X) should equal X if real X is fed
-                same_X = netG_Y2X(real_X)
+                same_X, _ = netG_Y2X(real_X)
                 loss_identity_X = criterion_identity(same_X, real_X) * ID_LOSS_W
 
             # GAN loss
-            fake_Y = netG_X2Y(real_X)
+            fake_Y, content_real_X = netG_X2Y(real_X)
             pred_fake = netD_Y(fake_Y, crop_image=CROP_IMAGE, crop_type='random')
             loss_GAN_X2Y = criterion_GAN(pred_fake, target_real) * GAN_LOSS_W
             acc_GAN_X2Y = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake)
 
-            fake_X = netG_Y2X(real_Y)
+            fake_X, content_real_Y = netG_Y2X(real_Y)
             pred_fake = netD_X(fake_X, crop_image=CROP_IMAGE, crop_type='center')
             loss_GAN_Y2X = criterion_GAN(pred_fake, target_real) * GAN_LOSS_W
             acc_GAN_Y2X = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake)
 
             # Cycle loss
-            recovered_X = netG_Y2X(fake_Y)
+            recovered_X, content_fake_Y = netG_Y2X(fake_Y)
             loss_cycle_XYX = criterion_cycle(recovered_X, real_X) * CYCLE_LOSS_W
 
-            recovered_Y = netG_X2Y(fake_X)
+            recovered_Y, content_fake_X = netG_X2Y(fake_X)
             loss_cycle_YXY = criterion_cycle(recovered_Y, real_Y) * CYCLE_LOSS_W 
 
+            # Content loss
+            if CONTENT_LOSS:
+                loss_content_X = criterion_content(content_fake_Y, content_real_X.detach())
+                loss_content_Y = criterion_content(content_fake_X, content_real_Y.detach())
+
             # Total loss
+            loss_G = loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_XYX + loss_cycle_YXY
             if ID_LOSS:
-                loss_G = loss_identity_X + loss_identity_Y + loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_XYX + loss_cycle_YXY
-            else:
-                loss_G = loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_XYX + loss_cycle_YXY
+                loss_G += loss_identity_X + loss_identity_Y
+            if CONTENT_LOSS:
+                loss_G += loss_content_X + loss_content_Y
             loss_G.backward()
 
             optimizer_G.step()
@@ -228,18 +236,16 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
             acc_D_Y = total_acc_D_Y / d_steps
 
             # Progress report (http://localhost:8097)
+            loss_dict = {'loss_G': loss_G, 'loss_G_GAN': (loss_GAN_X2Y + loss_GAN_Y2X),
+                         'loss_G_cycle': (loss_cycle_XYX + loss_cycle_YXY), 'loss_D': (loss_D_X + loss_D_Y)}
+            acc_dict = {'acc_G_GAN': (acc_GAN_X2Y + acc_GAN_Y2X) / 2, 'acc_D': (acc_D_X + acc_D_Y) / 2}
+            image_dict = {'real_X': real_X, 'real_Y': real_Y, 'fake_X': G_fake_X, 'fake_Y': G_fake_Y,
+                      'recovered_X': recovered_X, 'recovered_Y': recovered_Y}
             if ID_LOSS:
-                logger.log({'loss_G': loss_G, 'loss_G_GAN': (loss_GAN_X2Y + loss_GAN_Y2X), 'loss_G_cycle': (loss_cycle_XYX + loss_cycle_YXY),
-                            'loss_G_identity': (loss_identity_X + loss_identity_Y), 'loss_D': (loss_D_X + loss_D_Y)},
-                            {'acc_G_GAN': (acc_GAN_X2Y + acc_GAN_Y2X) / 2, 'acc_D': (acc_D_X + acc_D_Y) / 2},
-                            images={'real_X': real_X, 'real_Y': real_Y, 'fake_X': G_fake_X, 'fake_Y': G_fake_Y,
-                                    'recovered_X': recovered_X, 'recovered_Y': recovered_Y})
-            else:
-                logger.log({'loss_G': loss_G, 'loss_G_GAN': (loss_GAN_X2Y + loss_GAN_Y2X),
-                            'loss_G_cycle': (loss_cycle_XYX + loss_cycle_YXY), 'loss_D': (loss_D_X + loss_D_Y)},
-                            {'acc_G_GAN': (acc_GAN_X2Y + acc_GAN_Y2X) / 2, 'acc_D': (acc_D_X + acc_D_Y) / 2},
-                            images={'real_X': real_X, 'real_Y': real_Y, 'fake_X': G_fake_X, 'fake_Y': G_fake_Y,
-                                    'recovered_X': recovered_X, 'recovered_Y': recovered_Y})
+                loss_dict['loss_G_identity'] = (loss_identity_X + loss_identity_Y)
+            if CONTENT_LOSS:
+                loss_dict['loss_G_content'] = (loss_content_X + loss_content_Y)
+            logger.log(loss_dict, acc_dict, images=image_dict)
 
         # Update learning rates
         lr_scheduler_G.step()
