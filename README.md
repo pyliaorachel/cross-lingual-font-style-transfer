@@ -72,12 +72,13 @@ After training for longer, we found that the transfered images tend to white out
 
 Hence another content loss is introduced, which the early layer outputs from the `X2Y` generator and `Y2X` generator are enforced to be close to each other.
 
-Here are some intermediate results after training the model for one epoch. We have pulled the non-255 pixels down to zero to show the content of the transfered images.
+Here are some intermediate results after training the model for one epoch. We have pulled the non-255 pixels down to zero to show the content of the transfered images. The first two rows use the output from the third conv block as the content feature. The last row uses the output from the first conv block, i.e. enforces lower level details to be closer.
 
 ||Style|Content|Transfered|Transfered (contrast)|Recovered|
 |:-:|:-:|:-:|:-:|:-:|:-:|
 |Without Content Loss|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/original.png" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/without/transfered.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/without/transfered_contrast.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/without/recovered.jpg" width="64px" height="64px"/>|
-|With Content Loss|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/original.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/transfered.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/transfered_contrast.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/recovered.jpg?raw=true" width="64px" height="64px"/>|
+|With Content Loss (conv3)|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/original.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/transfered.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/transfered_contrast.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/recovered.jpg?raw=true" width="64px" height="64px"/>|
+|With Content Loss (conv1)|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/original.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/conv1/transfered.jpg?raw=true" width="64px" height="64px"/>|-|<img src="img/cyclegan/content_loss/conv1/recovered.jpg?raw=true" width="64px" height="64px"/>|
 
 ## References
 
