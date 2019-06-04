@@ -21,11 +21,12 @@ CONTENT_LOSS = True
 ID_LOSS = True
 SGD = False
 CROP_IMAGE = True
+STYLE_AUGMENT = True
 
 GAN_LOSS_W = 1
 CYCLE_LOSS_W = 10.0
 ID_LOSS_W = 5.0
-CONTENT_LOSS_W = 0.5
+CONTENT_LOSS_W = 0.8
 D_LR_W = 1
 IMG_NC = 1
 
@@ -116,7 +117,7 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     fake_Y_buffer = ReplayBuffer()
 
     # Dataset loader
-    train_set = PairedDataset(content_dataset, style_dataset, imsize, dtype=dtype, input_nc=IMG_NC)
+    train_set = PairedDataset(content_dataset, style_dataset, imsize, dtype=dtype, input_nc=IMG_NC, augment=STYLE_AUGMENT)
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
     # Loss plot

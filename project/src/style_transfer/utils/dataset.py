@@ -25,12 +25,13 @@ class Dataset(data.Dataset):
         return X, image_name
 
 class PairedDataset(data.Dataset):
-    def __init__(self, dataset, paired_dataset, imsize, dtype=torch.FloatTensor, input_nc=3):
+    def __init__(self, dataset, paired_dataset, imsize, dtype=torch.FloatTensor, input_nc=3, augment=False):
         self.dataset = dataset
         self.paired_dataset = paired_dataset
         self.imsize = imsize
         self.dtype = dtype
         self.input_nc = input_nc
+        self.augment = augment
 
         self.list_IDs = self.get_list_IDs(dataset)
         self.paired_list_IDs = self.get_list_IDs(paired_dataset)
@@ -47,6 +48,6 @@ class PairedDataset(data.Dataset):
         X = image_loader(image_name, self.imsize, first_dim=False, input_nc=self.input_nc).type(self.dtype)
 
         paired_image_name = self.paired_list_IDs[random.randint(0, self.n_paired - 1)]
-        Y = image_loader(paired_image_name, self.imsize, first_dim=False, input_nc=self.input_nc).type(self.dtype)
+        Y = image_loader(paired_image_name, self.imsize, first_dim=False, input_nc=self.input_nc, augment=self.augment).type(self.dtype)
 
         return X, Y
