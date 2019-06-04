@@ -93,23 +93,25 @@ class Generator(nn.Module):
         return y, z
 
 class Discriminator(nn.Module):
-    def __init__(self, input_nc=3, device=torch.device('cpu')):
+    def __init__(self, input_nc=3, patch_gan=False, device=torch.device('cpu')):
         super(Discriminator, self).__init__()
 
         # A bunch of convolutions one after another
-        model = [   nn.Conv2d(input_nc, 64, 4, stride=2, padding=1),
+        in_features = input_nc
+        out_features = 64
+        model = [   nn.Conv2d(in_features, out_features, 4, stride=2, padding=1),
                     nn.LeakyReLU(0.2, inplace=True) ]
 
-        model += [  nn.Conv2d(64, 128, 4, stride=2, padding=1),
-                    nn.InstanceNorm2d(128), 
+        model += [  nn.Conv2d(out_features, out_features * 2, 4, stride=2, padding=1),
+                    nn.InstanceNorm2d(out_features * 2),
                     nn.LeakyReLU(0.2, inplace=True) ]
 
-        model += [  nn.Conv2d(128, 256, 4, stride=2, padding=1),
-                    nn.InstanceNorm2d(256), 
+        model += [  nn.Conv2d(out_features * 2, out_features * 4, 4, stride=2, padding=1),
+                    nn.InstanceNorm2d(out_features * 4),
                     nn.LeakyReLU(0.2, inplace=True) ]
 
-        model += [  nn.Conv2d(256, 512, 4, padding=1),
-                    nn.InstanceNorm2d(512), 
+        model += [  nn.Conv2d(out_features * 4, out_features * 8, 4, padding=1),
+                    nn.InstanceNorm2d(out_features * 8),
                     nn.LeakyReLU(0.2, inplace=True) ]
 
         # FCN classification layer
@@ -118,6 +120,7 @@ class Discriminator(nn.Module):
         self.model = nn.Sequential(*model)
         self.apply(weights_init_normal)
 
+        self.patch_gan = patch_gan
         self.device = device
 
     def to_device(self):
@@ -130,5 +133,9 @@ class Discriminator(nn.Module):
         if crop_image:
             x = crop(x, crop_type)
         x =  self.model(x)
-        # Average pooling and flatten
-        return F.avg_pool2d(x, x.size()[2:]).view(x.size()[0])
+
+        if self.patch_gan:
+            return x.squeeze(1)
+        else:
+            # Average pooling and flatten
+            return F.avg_pool2d(x, x.size()[2:]).view(x.size()[0])
