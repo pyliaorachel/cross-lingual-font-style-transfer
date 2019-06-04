@@ -2,11 +2,13 @@
 Modified from https://github.com/aitorzip/PyTorch-CycleGAN
 '''
 
+from collections import OrderedDict
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .utils import weights_init_normal
+from .utils import weights_init_normal, crop
 
 
 class ResidualBlock(nn.Module):
@@ -27,44 +29,49 @@ class ResidualBlock(nn.Module):
         return x + self.conv_block(x)
 
 class Generator(nn.Module):
-    def __init__(self, input_nc=3, output_nc=3, n_residual_blocks=9, device=torch.device('cpu')):
+    def __init__(self, input_nc=3, output_nc=3, n_residual_blocks=8, device=torch.device('cpu')):
         super(Generator, self).__init__()
 
         # Initial convolution block       
-        model = [   nn.ReflectionPad2d(3),
-                    nn.Conv2d(input_nc, 64, 7),
-                    nn.InstanceNorm2d(64),
-                    nn.ReLU(inplace=True) ]
+        conv_blocks = [('refpad1', nn.ReflectionPad2d(3)),
+                       ('conv1', nn.Conv2d(input_nc, 64, 7)),
+                       ('norm1', nn.InstanceNorm2d(64)),
+                       ('relu1', nn.ReLU(inplace=True)) ]
 
         # Downsampling
         in_features = 64
         out_features = in_features * 2
-        for _ in range(2):
-            model += [  nn.Conv2d(in_features, out_features, 3, stride=2, padding=1),
-                        nn.InstanceNorm2d(out_features),
-                        nn.ReLU(inplace=True) ]
+        for i in range(2):
+            conv_blocks += [('conv' + str(i + 2), nn.Conv2d(in_features, out_features, 3, stride=2, padding=1)),
+                            ('norm' + str(i + 2), nn.InstanceNorm2d(out_features)),
+                            ('relu' + str(i + 2), nn.ReLU(inplace=True)) ]
             in_features = out_features
             out_features = in_features * 2
 
         # Residual blocks
-        for _ in range(n_residual_blocks):
-            model += [ResidualBlock(in_features)]
+        res_blocks = []
+        for i in range(n_residual_blocks):
+            res_blocks += [('resblk' + str(i + 1), ResidualBlock(in_features))]
 
         # Upsampling
+        deconv_blocks = []
         out_features = in_features // 2
-        for _ in range(2):
-            model += [  nn.ConvTranspose2d(in_features, out_features, 3, stride=2, padding=1, output_padding=1),
-                        nn.InstanceNorm2d(out_features),
-                        nn.ReLU(inplace=True) ]
+        for i in range(2):
+            deconv_blocks += [('convt' + str(i + 1), nn.ConvTranspose2d(in_features, out_features, 3, stride=2, padding=1, output_padding=1)),
+                              ('normt' + str(i + 1), nn.InstanceNorm2d(out_features)),
+                              ('relut' + str(i + 1), nn.ReLU(inplace=True)) ]
             in_features = out_features
             out_features = in_features // 2
 
         # Output layer
-        model += [  nn.ReflectionPad2d(3),
-                    nn.Conv2d(64, output_nc, 7),
-                    nn.Tanh() ]
+        output_blocks = [('outrefpad', nn.ReflectionPad2d(3)),
+                         ('outconv', nn.Conv2d(64, output_nc, 7)),
+                         ('outtanh', nn.Tanh()) ]
 
-        self.model = nn.Sequential(*model)
+        self.conv = nn.Sequential(OrderedDict(conv_blocks))
+        self.res = nn.Sequential(OrderedDict(res_blocks))
+        self.deconv = nn.Sequential(OrderedDict(deconv_blocks))
+        self.output = nn.Sequential(OrderedDict(output_blocks))
         self.apply(weights_init_normal)
 
         self.device = device
@@ -76,7 +83,11 @@ class Generator(nn.Module):
         self.cpu()
 
     def forward(self, x):
-        return self.model(x)
+        z = self.conv(x)
+        y = self.res(z)
+        y = self.deconv(y)
+        y = self.output(y)
+        return y, z
 
 class Discriminator(nn.Module):
     def __init__(self, input_nc=3, device=torch.device('cpu')):
@@ -112,7 +123,9 @@ class Discriminator(nn.Module):
     def release_device(self):
         self.cpu()
 
-    def forward(self, x):
+    def forward(self, x, crop_image=False, crop_type=None):
+        if crop_image:
+            x = crop(x, crop_type)
         x =  self.model(x)
         # Average pooling and flatten
         return F.avg_pool2d(x, x.size()[2:]).view(x.size()[0])
