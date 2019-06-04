@@ -7,6 +7,7 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.utils import spectral_norm
 
 from .utils import weights_init_normal, crop
 
@@ -93,7 +94,7 @@ class Generator(nn.Module):
         return y, z
 
 class Discriminator(nn.Module):
-    def __init__(self, input_nc=3, patch_gan=False, device=torch.device('cpu')):
+    def __init__(self, input_nc=3, patch_gan=False, spec_norm=False, device=torch.device('cpu')):
         super(Discriminator, self).__init__()
 
         # A bunch of convolutions one after another
@@ -102,17 +103,27 @@ class Discriminator(nn.Module):
         model = [   nn.Conv2d(in_features, out_features, 4, stride=2, padding=1),
                     nn.LeakyReLU(0.2, inplace=True) ]
 
-        model += [  nn.Conv2d(out_features, out_features * 2, 4, stride=2, padding=1),
-                    nn.InstanceNorm2d(out_features * 2),
-                    nn.LeakyReLU(0.2, inplace=True) ]
+        if spec_norm:
+            model += [  spectral_norm(nn.Conv2d(out_features, out_features * 2, 4, stride=2, padding=1)),
+                        nn.LeakyReLU(0.2, inplace=True) ]
 
-        model += [  nn.Conv2d(out_features * 2, out_features * 4, 4, stride=2, padding=1),
-                    nn.InstanceNorm2d(out_features * 4),
-                    nn.LeakyReLU(0.2, inplace=True) ]
+            model += [  spectral_norm(nn.Conv2d(out_features * 2, out_features * 4, 4, stride=2, padding=1)),
+                        nn.LeakyReLU(0.2, inplace=True) ]
 
-        model += [  nn.Conv2d(out_features * 4, out_features * 8, 4, padding=1),
-                    nn.InstanceNorm2d(out_features * 8),
-                    nn.LeakyReLU(0.2, inplace=True) ]
+            model += [  spectral_norm(nn.Conv2d(out_features * 4, out_features * 8, 4, padding=1)),
+                        nn.LeakyReLU(0.2, inplace=True) ]
+        else:
+            model += [  nn.Conv2d(out_features, out_features * 2, 4, stride=2, padding=1),
+                        nn.InstanceNorm2d(out_features * 2),
+                        nn.LeakyReLU(0.2, inplace=True) ]
+
+            model += [  nn.Conv2d(out_features * 2, out_features * 4, 4, stride=2, padding=1),
+                        nn.InstanceNorm2d(out_features * 4),
+                        nn.LeakyReLU(0.2, inplace=True) ]
+
+            model += [  nn.Conv2d(out_features * 4, out_features * 8, 4, padding=1),
+                        nn.InstanceNorm2d(out_features * 8),
+                        nn.LeakyReLU(0.2, inplace=True) ]
 
         # FCN classification layer
         model += [nn.Conv2d(512, 1, 4, padding=1)]

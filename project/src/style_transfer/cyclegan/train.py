@@ -23,6 +23,7 @@ SGD = False
 CROP_IMAGE = True
 STYLE_AUGMENT = True
 PATCH_GAN = False # unnecessary with CROP_IMAGE
+SPECTRAL_NORM = False
 
 GAN_LOSS_W = 1
 CYCLE_LOSS_W = 10.0
@@ -85,8 +86,8 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     # Networks
     netG_X2Y = Generator(input_nc=IMG_NC, output_nc=IMG_NC, device=device)
     netG_Y2X = Generator(input_nc=IMG_NC, output_nc=IMG_NC, device=device)
-    netD_X = Discriminator(input_nc=IMG_NC, patch_gan=PATCH_GAN, device=device)
-    netD_Y = Discriminator(input_nc=IMG_NC, patch_gan=PATCH_GAN, device=device)
+    netD_X = Discriminator(input_nc=IMG_NC, patch_gan=PATCH_GAN, spec_norm=SPECTRAL_NORM, device=device)
+    netD_Y = Discriminator(input_nc=IMG_NC, patch_gan=PATCH_GAN, spec_norm=SPECTRAL_NORM, device=device)
 
     netG_X2Y.to_device()
     netG_Y2X.to_device()
