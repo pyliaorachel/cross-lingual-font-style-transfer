@@ -83,3 +83,4 @@ Here are some intermediate results after training the model for one epoch. We ha
 
 - [Neural Artistic Style Transfer: A Comprehensive Look](https://medium.com/artists-and-machine-intelligence/neural-artistic-style-transfer-a-comprehensive-look-f54d8649c199)
 - [GitHub: aitorzip/PyTorch-CycleGAN](https://github.com/aitorzip/PyTorch-CycleGAN)
+- [GitHub: soumith/ganhacks](https://github.com/soumith/ganhacks)
