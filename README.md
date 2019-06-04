@@ -55,16 +55,19 @@ $ python -m project.src.style_transfer.cyclegan.eval \
 
 ### CycleGAN
 
-#### Image Cropping
+#### Image Cropping & PatchGAN
 
 Image data are cropped before feeding into the discriminators to pervent them from learning that in general Chinese characters have more dark pixels than English characters in the images. We cropped at center for English characters (style) and cropped randomly at anywhere for Chinese characters (content).
 
+[PatchGAN](http://openaccess.thecvf.com/content_cvpr_2017/papers/Isola_Image-To-Image_Translation_With_CVPR_2017_paper.pdf) is a similar technique which captures local structures of an image for discriminator to differentiate. We did not combine it with image cropping since the image will be too small and patches will be meaningless.
+
 Here are some intermediate results after training the model for a few iterations.
 
-||Style|Content|Transfered|
-|:-:|:-:|:-:|:-:|
-|Without Cropping|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/original.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/transfered.jpg" width="64px" height="64px"/>|
-|With Cropping|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/original.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/transfered.jpg?raw=true" width="64px" height="64px"/>|
+||Style|Content|Transfered (Content)|Transfered(Style)|
+|:-:|:-:|:-:|:-:|:-:|
+|Without Cropping|<img src="img/cyclegan/image_crop/without/original_Y.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/original.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/transfered.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/transfered_Y.jpg" width="64px" height="64px"/>|
+|With Cropping|<img src="img/cyclegan/image_crop/with/original_Y.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/original.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/transfered.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/transfered_Y.jpg?raw=true" width="64px" height="64px"/>|
+|PatchGAN|<img src="img/cyclegan/image_crop/patch_gan/original_Y.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/patch_gan/original.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/patch_gan/transfered.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/patch_gan/transfered_Y.jpg?raw=true" width="64px" height="64px"/>|
 
 #### Content Loss
 
@@ -72,13 +75,14 @@ After training for longer, we found that the transfered images tend to white out
 
 Hence another content loss is introduced, which the early layer outputs from the `X2Y` generator and `Y2X` generator are enforced to be close to each other.
 
-Here are some intermediate results after training the model for one epoch. We have pulled the non-255 pixels down to zero to show the content of the transfered images. The first two rows use the output from the third conv block as the content feature. The last row uses the output from the first conv block, i.e. enforces lower level details to be closer.
+Here are some intermediate results after training the model for one epoch. We have pulled the non-255 pixels down to zero to show the content of the transfered images. The first two rows use the output from the third conv block as the content feature. The last two rows use the output from the first conv block, i.e. enforces lower level details to be closer. The last row with a lower loss weight loosens the enforcement.
 
 ||Style|Content|Transfered|Transfered (contrast)|Recovered|
 |:-:|:-:|:-:|:-:|:-:|:-:|
 |Without Content Loss|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/original.png" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/without/transfered.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/without/transfered_contrast.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/without/recovered.jpg" width="64px" height="64px"/>|
-|With Content Loss (conv3)|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/original.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/transfered.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/transfered_contrast.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/recovered.jpg?raw=true" width="64px" height="64px"/>|
-|With Content Loss (conv1)|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/original.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/conv1/transfered.jpg?raw=true" width="64px" height="64px"/>|-|<img src="img/cyclegan/content_loss/conv1/recovered.jpg?raw=true" width="64px" height="64px"/>|
+|With Content Loss (conv3, loss weight 1)|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/original.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/transfered.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/transfered_contrast.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/with/recovered.jpg?raw=true" width="64px" height="64px"/>|
+|With Content Loss (conv1, loss weight 1)|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/conv1/original.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/conv1/transfered.jpg?raw=true" width="64px" height="64px"/>|-|<img src="img/cyclegan/content_loss/conv1/recovered.jpg?raw=true" width="64px" height="64px"/>|
+|With Content Loss (conv1, loss weight 0.5)|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/conv1_lower_w/original.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/content_loss/conv1_lower_w/transfered.jpg?raw=true" width="64px" height="64px"/>|-|<img src="img/cyclegan/content_loss/conv1_lower_w/recovered.jpg?raw=true" width="64px" height="64px"/>|
 
 ## References
 
