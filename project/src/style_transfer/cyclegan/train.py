@@ -25,6 +25,7 @@ CROP_IMAGE = True
 GAN_LOSS_W = 1
 CYCLE_LOSS_W = 10.0
 ID_LOSS_W = 5.0
+CONTENT_LOSS_W = 0.5
 D_LR_W = 1
 IMG_NC = 1
 
@@ -165,8 +166,8 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
             # Content loss
             if CONTENT_LOSS:
-                loss_content_X = criterion_content(content_fake_Y, content_real_X.detach())
-                loss_content_Y = criterion_content(content_fake_X, content_real_Y.detach())
+                loss_content_X = criterion_content(content_fake_Y, content_real_X.detach()) * CONTENT_LOSS_W
+                loss_content_Y = criterion_content(content_fake_X, content_real_Y.detach()) * CONTENT_LOSS_W
 
             # Total loss
             loss_G = loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_XYX + loss_cycle_YXY

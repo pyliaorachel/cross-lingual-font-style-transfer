@@ -33,14 +33,15 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         # Initial convolution block       
-        conv_blocks = [('refpad1', nn.ReflectionPad2d(3)),
-                       ('conv1', nn.Conv2d(input_nc, 64, 7)),
-                       ('norm1', nn.InstanceNorm2d(64)),
-                       ('relu1', nn.ReLU(inplace=True)) ]
+        conv_block_1 = [('refpad1', nn.ReflectionPad2d(3)),
+                        ('conv1', nn.Conv2d(input_nc, 64, 7)),
+                        ('norm1', nn.InstanceNorm2d(64)),
+                        ('relu1', nn.ReLU(inplace=True)) ]
 
         # Downsampling
         in_features = 64
         out_features = in_features * 2
+        conv_blocks = []
         for i in range(2):
             conv_blocks += [('conv' + str(i + 2), nn.Conv2d(in_features, out_features, 3, stride=2, padding=1)),
                             ('norm' + str(i + 2), nn.InstanceNorm2d(out_features)),
@@ -68,6 +69,7 @@ class Generator(nn.Module):
                          ('outconv', nn.Conv2d(64, output_nc, 7)),
                          ('outtanh', nn.Tanh()) ]
 
+        self.conv_init = nn.Sequential(OrderedDict(conv_block_1))
         self.conv = nn.Sequential(OrderedDict(conv_blocks))
         self.res = nn.Sequential(OrderedDict(res_blocks))
         self.deconv = nn.Sequential(OrderedDict(deconv_blocks))
@@ -83,8 +85,9 @@ class Generator(nn.Module):
         self.cpu()
 
     def forward(self, x):
-        z = self.conv(x)
-        y = self.res(z)
+        z = self.conv_init(x) # lower level conv layer as content
+        y = self.conv(z)
+        y = self.res(y)
         y = self.deconv(y)
         y = self.output(y)
         return y, z
