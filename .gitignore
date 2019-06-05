@@ -8,7 +8,7 @@ __pycache__/
 
 # data
 data/*/*.png
-
+data/*/*/*.png
 # Distribution / packaging
 .Python
 build/

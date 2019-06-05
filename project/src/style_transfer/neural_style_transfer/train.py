@@ -6,6 +6,8 @@ import torchvision.datasets as datasets
 
 from .net import StyleCNN
 from ..utils.utils import *
+from ..itn.utils import Logger
+
 
 
 # CUDA Configurations
@@ -29,25 +31,44 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def isnan(x):
+    return x != x
+
 def train(style_image, content_image, imsize, epochs, output_path, log_epochs=10):
     # Load content and style images
     style = image_loader(style_image, imsize).type(dtype)
     content = image_loader(content_image, imsize).type(dtype)
+    encoding = content_image.split('/')[-1].split('.')[1]
+#     print(encoding)
 
     pastiche = image_loader(content_image, imsize).type(dtype)
     pastiche.data = torch.randn(pastiche.data.size()).type(dtype)
 
     # Train network
     style_cnn = StyleCNN(style, content, pastiche)
+    
+    logger = Logger(epochs, 1, log_per_iter=True)
+    prev_loss = 1000
 
     for i in range(epochs):
         pastiche, content_loss, style_loss = style_cnn.train()
-
+        pastiche.data.clamp_(0, 1)
+        
+        if isnan(content_loss) or isnan(style_loss):
+            break
+        
         if i % log_epochs == 0:
             print('Epoch: {}, content loss: {}, style loss: {}'.format(i, content_loss, style_loss))
+            
+        if (content_loss + style_loss) < prev_loss:
+            prev_loss = (content_loss + style_loss)
+            save_image(pastiche, (output_path + str(encoding) + '.png'), imsize)
+            print('STYLE_LOSS_' + str(encoding) + ' : ' + str(style_loss))
+        logger.log(losses={'content_loss':content_loss, 'style_loss':style_loss},  
+                       images={'content':content, 'style':style, 'pastiche':pastiche})
 
-    pastiche.data.clamp_(0, 1)
-    save_image(pastiche, output_path, imsize)
+    
+    
 
 if __name__ == '__main__':
     args = parse_args()

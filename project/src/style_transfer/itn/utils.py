@@ -8,6 +8,7 @@ from visdom import Visdom
 import numpy as np
 
 def tensor2image(tensor):
+#     print("tensor:" , tensor.shape, type(tensor))
     image = 127.5 * (tensor[0].cpu().float().numpy() + 1.0)
     if image.shape[0] == 1:
         image = np.tile(image, (3,1,1))
@@ -37,9 +38,9 @@ class Logger():
 
         for i, loss_name in enumerate(losses.keys()):
             if loss_name not in self.losses:
-                self.losses[loss_name] = losses[loss_name].item()
+                self.losses[loss_name] = losses[loss_name]
             else:
-                self.losses[loss_name] += losses[loss_name].item()
+                self.losses[loss_name] += losses[loss_name]
 
             if (i+1) == len(losses.keys()):
                 sys.stdout.write('%s: %.4f -- ' % (loss_name, self.losses[loss_name]/self.batch))

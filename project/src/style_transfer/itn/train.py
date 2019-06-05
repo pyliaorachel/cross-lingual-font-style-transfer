@@ -37,11 +37,11 @@ def parse_args():
 
 def train(dataset, style_image, imsize, epochs, batch_size, output_model_path, log_epochs=10, save_epochs=10):
     # Load training dataset
-    train_set = Dataset(dataset, imsize, dtype=dtype)
+    train_set = Dataset(dataset, imsize, dtype=dtype, input_nc=1)
     train_loader = data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
     # Load target style image
-    style = image_loader(style_image, imsize).type(dtype)
+    style = image_loader(style_image, imsize, input_nc=1).type(dtype)
 
     # Loss plot
     logger = Logger(epochs, len(train_loader), log_per_iter=True)
@@ -49,15 +49,22 @@ def train(dataset, style_image, imsize, epochs, batch_size, output_model_path, l
     # Train network
     itn = ITN(style)
 
+    count = 0
     for i in range(epochs):
         for train_batch, _ in train_loader:
             pastiche, content_loss, style_loss = itn.train(train_batch)
+            
+            if count > 300:
+                itn.style_weight = 1000
+            count += 1
+            
+#             print(type(pastiche))
+#             print(pastiche.shape)
+#             print(train_batch.shape)
 
             # progress report
-            logger.log(losses={'content_loss': content_loss, 'style_loss': style_loss}, 
-                       accs={}, 
-                    images={'train_batch': train_batch,'style_image': style_image,
-                            'pastiche': pastiche})
+            logger.log(losses={'content_loss':content_loss, 'style_loss':style_loss},  
+                       images={'train_batch':train_batch, 'style':style, 'pastiche':pastiche})
 
 
             if i % log_epochs == 0:

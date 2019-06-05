@@ -23,7 +23,7 @@ class StyleCNN(object):
         self.content_layers = ['conv_4']
         self.style_layers = ['conv_1', 'conv_2', 'conv_3', 'conv_4', 'conv_5']
         self.content_weight = 1
-        self.style_weight = 1000000
+        self.style_weight = 1e6
 
         self.loss_network = models.vgg19(pretrained=True)
 
