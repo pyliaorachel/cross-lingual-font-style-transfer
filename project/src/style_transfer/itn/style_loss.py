@@ -37,7 +37,6 @@ class StyleLoss(object):
     
     def eval(self, content, style):
         self.loss_network.eval()
-        self.transform_network.eval()
 
         content = content.clone()
         pastiche = self.transform_network.forward(content)
@@ -108,33 +107,31 @@ def parse_args():
                         help='Image of target style.')
     parser.add_argument('--imsize', type=int,
                         help='Image size.')
-    parser.add_argument('--model', type=str,
-                        help='Path to saved model.')
-    parser.add_argument('--output-dir', type=str,
-                        help='Path to output directory.')
+   
+   
 
     args = parser.parse_args()
     return args
 
-def evaluate(dataset, style, imsize, model_path, output_dir):
+def evaluate(dataset, style, imsize):
     # Load eval dataset
     eval_set = Dataset(dataset, imsize, dtype=dtype, input_nc=1)
     loader = data.DataLoader(eval_set)
     style = image_loader(style, imsize, input_nc=1).type(dtype)
 
-    # Load network
     sloss = StyleLoss()
-    sloss.load(model_path)
     
     style_loss = 0
 
     for content, fname in loader:
         style_loss += sloss.eval(content, style)
-    print(style_loss / len(loader))
+  
+    print('style_loss: ', dataset, ' : ', style_loss / len(loader))
 #         output_fname = os.path.join(output_dir, 'transfered_' + os.path.split(fname[0])[1])
 #         save_image(pastiche, output_fname, imsize)
+    return style_loss
 
 if __name__ == '__main__':
     args = parse_args()
 
-    evaluate(args.dataset, args.style, args.imsize, args.model, args.output_dir)
+    evaluate(args.dataset, args.style, args.imsize)
