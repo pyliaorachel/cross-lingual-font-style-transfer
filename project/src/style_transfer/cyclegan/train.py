@@ -21,10 +21,14 @@ CONTENT_LOSS = True
 ID_LOSS = True
 SGD = False
 CROP_IMAGE = True
+STYLE_AUGMENT = True
+PATCH_GAN = False # unnecessary with CROP_IMAGE
+SPECTRAL_NORM = False
 
 GAN_LOSS_W = 1
 CYCLE_LOSS_W = 10.0
 ID_LOSS_W = 5.0
+CONTENT_LOSS_W = 1
 D_LR_W = 1
 IMG_NC = 1
 
@@ -82,8 +86,8 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     # Networks
     netG_X2Y = Generator(input_nc=IMG_NC, output_nc=IMG_NC, device=device)
     netG_Y2X = Generator(input_nc=IMG_NC, output_nc=IMG_NC, device=device)
-    netD_X = Discriminator(input_nc=IMG_NC, device=device)
-    netD_Y = Discriminator(input_nc=IMG_NC, device=device)
+    netD_X = Discriminator(input_nc=IMG_NC, patch_gan=PATCH_GAN, spec_norm=SPECTRAL_NORM, device=device)
+    netD_Y = Discriminator(input_nc=IMG_NC, patch_gan=PATCH_GAN, spec_norm=SPECTRAL_NORM, device=device)
 
     netG_X2Y.to_device()
     netG_Y2X.to_device()
@@ -115,7 +119,7 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     fake_Y_buffer = ReplayBuffer()
 
     # Dataset loader
-    train_set = PairedDataset(content_dataset, style_dataset, imsize, dtype=dtype, input_nc=IMG_NC)
+    train_set = PairedDataset(content_dataset, style_dataset, imsize, dtype=dtype, input_nc=IMG_NC, augment=STYLE_AUGMENT)
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
     # Loss plot
@@ -124,11 +128,16 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
     ###### Training ######
     output_path = 'project/output/{}'.format(exp_name)
     os.makedirs(output_path, exist_ok=True)
+    num_D_outputs = 1 if not PATCH_GAN else 14 * 14
 
     for epoch in range(epochs):
         for i, (real_X, real_Y) in enumerate(train_loader):
-            target_fake = torch.rand((len(real_X),)) * 0.5 + 0.7 # soft label: 0.7 - 1.2
-            target_real = torch.rand((len(real_X),)) * 0.3       # soft label: 0 - 0.3
+            if not PATCH_GAN:
+                target_fake = torch.rand((len(real_X),)) * 0.5 + 0.7 # soft label: 0.7 - 1.2
+                target_real = torch.rand((len(real_X),)) * 0.3       # soft label: 0 - 0.3
+            else:
+                target_fake = torch.rand((len(real_X), 14, 14)) * 0.5 + 0.7
+                target_real = torch.rand((len(real_X), 14, 14)) * 0.3
             target_real = target_real.type(dtype)
             target_fake = target_fake.type(dtype)
 
@@ -149,12 +158,12 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
             fake_Y, content_real_X = netG_X2Y(real_X)
             pred_fake = netD_Y(fake_Y, crop_image=CROP_IMAGE, crop_type='random')
             loss_GAN_X2Y = criterion_GAN(pred_fake, target_real) * GAN_LOSS_W
-            acc_GAN_X2Y = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake)
+            acc_GAN_X2Y = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake) / num_D_outputs
 
             fake_X, content_real_Y = netG_Y2X(real_Y)
             pred_fake = netD_X(fake_X, crop_image=CROP_IMAGE, crop_type='center')
             loss_GAN_Y2X = criterion_GAN(pred_fake, target_real) * GAN_LOSS_W
-            acc_GAN_Y2X = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake)
+            acc_GAN_Y2X = ((pred_fake < 0.5) == True).sum().item() / len(pred_fake) / num_D_outputs
 
             # Cycle loss
             recovered_X, content_fake_Y = netG_Y2X(fake_Y)
@@ -165,8 +174,8 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
 
             # Content loss
             if CONTENT_LOSS:
-                loss_content_X = criterion_content(content_fake_Y, content_real_X.detach())
-                loss_content_Y = criterion_content(content_fake_X, content_real_Y.detach())
+                loss_content_X = criterion_content(content_fake_Y, content_real_X.detach()) * CONTENT_LOSS_W
+                loss_content_Y = criterion_content(content_fake_X, content_real_Y.detach()) * CONTENT_LOSS_W
 
             # Total loss
             loss_G = loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_XYX + loss_cycle_YXY
@@ -200,7 +209,7 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
                 loss_D_fake = criterion_GAN(pred_fake, target_fake) * GAN_LOSS_W
 
                 total_acc_D_X += (((pred_fake >= 0.5) == True).sum().item() + \
-                                    ((pred_real < 0.5) == True).sum().item()) / (len(pred_real) + len(pred_fake))
+                                    ((pred_real < 0.5) == True).sum().item()) / (len(pred_real) + len(pred_fake)) / num_D_outputs
 
                 # Total loss
                 loss_D_X = (loss_D_real + loss_D_fake) * 0.5
@@ -222,7 +231,7 @@ def train(content_dataset, style_dataset, imsize, exp_name, epochs, batch_size, 
                 loss_D_fake = criterion_GAN(pred_fake, target_fake) * GAN_LOSS_W
 
                 total_acc_D_X += (((pred_fake >= 0.5) == True).sum().item() + \
-                                    ((pred_real < 0.5) == True).sum().item()) / (len(pred_real) + len(pred_fake))
+                                    ((pred_real < 0.5) == True).sum().item()) / (len(pred_real) + len(pred_fake)) / num_D_outputs
 
                 # Total loss
                 loss_D_Y = (loss_D_real + loss_D_fake) * 0.5

@@ -55,16 +55,19 @@ $ python -m project.src.style_transfer.cyclegan.eval \
 
 ### CycleGAN
 
-#### Image Cropping
+#### Image Cropping & PatchGAN
 
 Image data are cropped before feeding into the discriminators to pervent them from learning that in general Chinese characters have more dark pixels than English characters in the images. We cropped at center for English characters (style) and cropped randomly at anywhere for Chinese characters (content).
 
+[PatchGAN](http://openaccess.thecvf.com/content_cvpr_2017/papers/Isola_Image-To-Image_Translation_With_CVPR_2017_paper.pdf) is a similar technique which captures local structures of an image for discriminator to differentiate. We did not combine it with image cropping since the image will be too small and patches will be meaningless.
+
 Here are some intermediate results after training the model for a few iterations.
 
-||Style|Content|Transfered|
-|:-:|:-:|:-:|:-:|
-|Without Cropping|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/original.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/transfered.jpg" width="64px" height="64px"/>|
-|With Cropping|<img src="img/style.png?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/original.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/transfered.jpg?raw=true" width="64px" height="64px"/>|
+||Style|Content|Transfered (Content)|Transfered(Style)|
+|:-:|:-:|:-:|:-:|:-:|
+|Without Cropping|<img src="img/cyclegan/image_crop/without/original_Y.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/original.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/transfered.jpg" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/without/transfered_Y.jpg" width="64px" height="64px"/>|
+|With Cropping|<img src="img/cyclegan/image_crop/with/original_Y.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/original.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/transfered.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/with/transfered_Y.jpg?raw=true" width="64px" height="64px"/>|
+|PatchGAN|<img src="img/cyclegan/image_crop/patch_gan/original_Y.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/patch_gan/original.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/patch_gan/transfered.jpg?raw=true" width="64px" height="64px"/>|<img src="img/cyclegan/image_crop/patch_gan/transfered_Y.jpg?raw=true" width="64px" height="64px"/>|
 
 #### Content Loss
 

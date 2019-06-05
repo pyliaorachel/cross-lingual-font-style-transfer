@@ -7,15 +7,21 @@ from PIL import Image
 import scipy.misc
 
 
-def image_loader(image_name, imsize, first_dim=True, input_nc=3):
-    loader = transforms.Compose([
+def image_loader(image_name, imsize, first_dim=True, input_nc=3, augment=False):
+    transform_list = [
         transforms.Resize(imsize),
         transforms.Grayscale(input_nc),
-        transforms.ToTensor()
-    ])
+    ]
+
+    if augment:
+        transform_list.append(transforms.RandomAffine(degrees=360, translate=(0.2, 0.2), scale=(1, 1.2), fillcolor=255))
+
+    transform_list.append(transforms.ToTensor())
+    loader = transforms.Compose(transform_list)
 
     image = Image.open(image_name)
     image = loader(image)
+
     if first_dim:
         image = image.unsqueeze(0)
     return image
