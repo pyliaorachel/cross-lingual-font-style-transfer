@@ -2,6 +2,10 @@
 
 Cross-lingual font style transfer from English fonts to Chinese characters.
 
+[Final report](https://github.com/pyliaorachel/cross-lingual-font-style-transfer/blob/master/cs231n-final-report.pdf)
+
+[Poster](https://github.com/pyliaorachel/cross-lingual-font-style-transfer/blob/master/cs231n-poster.pdf)
+
 ## Methods
 
 - Neural Style Transfer
@@ -52,6 +56,8 @@ $ python -m project.src.style_transfer.cyclegan.eval \
 |Font|<img src="img/neural_style_transfer/font/style.png?raw=true" width="64px" height="64px"/>|<img src="img/neural_style_transfer/font/content.png?raw=true" width="64px" height="64px"/>|<img src="img/neural_style_transfer/font/pastiche.png?raw=true" width="64px" height="64px"/>|
 
 ## Feature Comparisons
+
+For more details, refer to Section 5.3 and 5.4 in the [final report](https://github.com/pyliaorachel/cross-lingual-font-style-transfer/blob/master/cs231n-final-report.pdf).
 
 ### CycleGAN
 
